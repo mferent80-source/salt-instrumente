@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salt Bank — Instrumente Disponibile</title>
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Salt Instrumente">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0a'/%3E%3Ctext y='70' x='50' text-anchor='middle' font-size='58'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0a'/%3E%3Ctext y='70' x='50' text-anchor='middle' font-size='58'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --bg-soft: #141414;
+  --bg-card: #1a1a1a;
+  --border: #2a2a2a;
+  --border-soft: #1f1f1f;
+  --text: #e8e8e8;
+  --text-dim: #888;
+  --text-faint: #555;
+  --accent: #ff6b1a;
+  --accent-dim: #ff6b1a33;
+  --green: #4ade80;
+  --blue: #60a5fa;
+  --purple: #c084fc;
+  --pink: #f472b6;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  background-image: 
+    radial-gradient(circle at 20% 0%, #ff6b1a0a 0%, transparent 50%),
+    radial-gradient(circle at 80% 100%, #60a5fa0a 0%, transparent 50%);
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.title-wrap h1 {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: clamp(32px, 5vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.title-wrap h1 .accent {
+  color: var(--accent);
+}
+
+.subtitle {
+  margin-top: 12px;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: -0.02em;
+}
+
+.source-link {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-faint);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.source-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Install (PWA) button */
+.install-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #000;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: filter 0.2s;
+}
+.install-btn:hover { filter: brightness(1.1); }
+.install-btn.show { display: inline-flex; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s;
+  z-index: 1000;
+  max-width: 90vw;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Stats bar */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 16px 20px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 60%, var(--accent-dim));
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--text);
+  position: relative;
+  z-index: 1;
+}
+
+.stat:nth-child(1) .stat-value { color: var(--accent); }
+.stat:nth-child(2) .stat-value { color: var(--green); }
+.stat:nth-child(3) .stat-value { color: var(--blue); }
+.stat:nth-child(4) .stat-value { color: var(--purple); }
+.stat:nth-child(5) .stat-value { color: var(--pink); }
+
+/* Search */
+.search-bar {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 280px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+}
+
+.search-input::placeholder {
+  color: var(--text-faint);
+}
+
+.clear-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 14px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Filter chips */
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.filter-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 8px 0;
+  margin-right: 4px;
+}
+
+.chip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 6px 14px;
+  border-radius: 100px;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.chip:hover {
+  border-color: var(--text-dim);
+  color: var(--text);
+}
+
+.chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+  font-weight: 500;
+}
+
+.chip .count {
+  opacity: 0.6;
+  margin-left: 6px;
+}
+
+/* Results header */
+.results-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 24px 0 16px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.results-count {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Table */
+.table-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: var(--bg-soft);
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  text-align: left;
+  padding: 14px 18px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  position: sticky;
+  top: 0;
+  background: var(--bg-soft);
+}
+
+th:hover { color: var(--text); }
+
+th.sorted::after {
+  content: ' ↓';
+  color: var(--accent);
+}
+
+th.sorted.asc::after {
+  content: ' ↑';
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--border-soft);
+  transition: background 0.1s;
+}
+
+tbody tr:last-child {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background: var(--bg-soft);
+}
+
+td {
+  padding: 12px 18px;
+  font-size: 13px;
+}
+
+td.name {
+  font-weight: 500;
+  color: var(--text);
+}
+
+td.isin {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.type-Common.Stock { background: #4ade8022; color: #4ade80; border: 1px solid #4ade8044; }
+.type-ETF { background: #60a5fa22; color: #60a5fa; border: 1px solid #60a5fa44; }
+.type-ETP { background: #c084fc22; color: #c084fc; border: 1px solid #c084fc44; }
+.type-Preference { background: #f472b622; color: #f472b6; border: 1px solid #f472b644; }
+
+.juris-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-faint);
+  font-family: 'DM Mono', monospace;
+}
+
+/* Notice */
+.notice {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px;
+  border-radius: 6px;
+  margin-bottom: 32px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.notice strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.notice .warn {
+  color: var(--accent);
+}
+
+/* Footer */
+.footer {
+  margin-top: 60px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 20px 12px 40px; }
+  th, td { padding: 10px 12px; font-size: 12px; }
+  td.isin { display: none; }
+  th:nth-child(4) { display: none; }
+}
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  padding: 12px 18px;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  margin-bottom: -1px;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── API key panel ── */
+.key-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 640px) { .key-panel { grid-template-columns: 1fr; } }
+.key-field label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+}
+.key-field label a { color: var(--accent); text-decoration: none; }
+.key-field input {
+  width: 100%;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  outline: none;
+}
+.key-field input:focus { border-color: var(--accent); }
+
+/* ── Scan controls ── */
+.scan-controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.scan-btn {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: #000;
+  padding: 12px 22px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.scan-btn:hover { filter: brightness(1.1); }
+.scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.scan-hint {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.ai-btn {
+  background: var(--accent-dim);
+  border: 1px solid var(--purple);
+  color: var(--purple);
+  padding: 12px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.ai-btn:hover { background: var(--purple); color: #000; }
+.ai-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Progress ── */
+.progress-wrap { margin-bottom: 16px; display: none; }
+.progress-wrap.active { display: block; }
+.progress-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+.progress-track {
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+/* ── Early bird cards ── */
+.eb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+.eb-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.eb-card.top-pick { box-shadow: 0 0 0 2px var(--green); border-color: transparent; }
+.eb-stripe { height: 3px; background: linear-gradient(90deg, var(--green), var(--accent)); }
+.eb-body { padding: 14px 16px; }
+.eb-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.eb-name { font-weight: 600; font-size: 14px; color: var(--text); line-height: 1.3; }
+.eb-meta { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text-faint); margin-top: 3px; }
+.eb-score { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 28px; line-height: 1; color: var(--green); }
+.eb-score-lbl { font-family: 'DM Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); text-align: right; }
+.eb-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 100px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.eb-stage1 { background: #4ade8022; color: var(--green); border: 1px solid #4ade8044; }
+.eb-stage2 { background: #ff6b1a22; color: var(--accent); border: 1px solid #ff6b1a44; }
+.eb-stage3 { background: #60a5fa22; color: var(--blue); border: 1px solid #60a5fa44; }
+.eb-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.eb-metric { background: var(--bg-soft); border-radius: 6px; padding: 8px 10px; }
+.eb-metric-lbl { font-family: 'DM Mono', monospace; font-size: 9px; text-transform: uppercase; color: var(--text-faint); margin-bottom: 3px; }
+.eb-metric-val { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--text); }
+.eb-spark { height: 36px; margin-bottom: 10px; }
+.eb-spark svg { width: 100%; height: 100%; }
+.eb-links { display: flex; gap: 8px; }
+.eb-link {
+  flex: 1;
+  text-align: center;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 7px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  transition: all 0.15s;
+}
+.eb-link:hover { border-color: var(--accent); color: var(--accent); }
+.eb-failed { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-faint); margin-top: 16px; line-height: 1.6; }
+.eb-failed strong { color: var(--text-dim); }
+
+/* ── AI result box ── */
+.ai-result {
+  background: var(--bg-card);
+  border: 1px solid var(--purple);
+  border-left: 3px solid var(--purple);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  display: none;
+}
+.ai-result.active { display: block; }
+.ai-result a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.ai-result textarea { width: 100%; height: 120px; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="title-wrap">
+      <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="install-btn" id="pwaInstallBtn" onclick="installPWA()">📱 Instalează</button>
+      <a class="source-link" href="https://salt.bank/storage/app/efsfiles/media/investitii/Lista%20intrumente%20disponibile%20pentru%20tranzactionare.pdf" target="_blank">
+        [↗] PDF oficial Salt
+      </a>
+    </div>
+  </div>
+
+  <div class="notice">
+    <strong>Sursă:</strong> extras din PDF-ul oficial Salt Bank (Lista instrumente disponibile pentru tranzactionare). 
+    <strong>Broker executant:</strong> Upvest Securities GmbH (Germania). 
+    <span class="warn">Atenție:</span> unele coloane ISIN sunt aliniate greșit în PDF-ul original — numele și tipul sunt corecte, dar verifică ISIN-ul în aplicație înainte de tranzacționare. Lista poate fi actualizată oricând fără notificare.
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Total</div>
+      <div class="stat-value" id="stat-total">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Acțiuni</div>
+      <div class="stat-value" id="stat-stocks">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">ETF-uri</div>
+      <div class="stat-value" id="stat-etf">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">ETP-uri</div>
+      <div class="stat-value" id="stat-etp">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Preference</div>
+      <div class="stat-value" id="stat-pref">0</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="list" onclick="switchView('list')">📋 Listă completă</button>
+    <button class="tab" data-view="earlybird" onclick="switchView('earlybird')">🌱 Early Bird</button>
+  </div>
+
+  <div class="view active" id="view-list">
+
+  <div class="search-bar">
+    <input type="text" id="search" class="search-input" placeholder="Caută: ticker, nume companie, ISIN... (ex: NVDA, Apple, Tesla)">
+    <button class="clear-btn" id="clear-btn">Curăță</button>
+  </div>
+
+  <div class="filters">
+    <span class="filter-label">Tip:</span>
+    <div class="chip active" data-filter="type" data-value="all">Toate</div>
+    <div class="chip" data-filter="type" data-value="Common Stock">Acțiuni</div>
+    <div class="chip" data-filter="type" data-value="ETF">ETF</div>
+    <div class="chip" data-filter="type" data-value="ETP">ETP</div>
+    <div class="chip" data-filter="type" data-value="Preference">Preference</div>
+  </div>
+
+  <div class="filters">
+    <span class="filter-label">Țară:</span>
+    <div class="chip active" data-filter="jurisdiction" data-value="all">Toate</div>
+    <div class="chip" data-filter="jurisdiction" data-value="US">🇺🇸 US</div>
+    <div class="chip" data-filter="jurisdiction" data-value="DE">🇩🇪 DE</div>
+    <div class="chip" data-filter="jurisdiction" data-value="IE">🇮🇪 IE</div>
+    <div class="chip" data-filter="jurisdiction" data-value="FR">🇫🇷 FR</div>
+    <div class="chip" data-filter="jurisdiction" data-value="LU">🇱🇺 LU</div>
+    <div class="chip" data-filter="jurisdiction" data-value="NL">🇳🇱 NL</div>
+    <div class="chip" data-filter="jurisdiction" data-value="GB">🇬🇧 GB</div>
+    <div class="chip" data-filter="jurisdiction" data-value="CA">🇨🇦 CA</div>
+    <div class="chip" data-filter="jurisdiction" data-value="AT">🇦🇹 AT</div>
+    <div class="chip" data-filter="jurisdiction" data-value="IT">🇮🇹 IT</div>
+    <div class="chip" data-filter="jurisdiction" data-value="ES">🇪🇸 ES</div>
+    <div class="chip" data-filter="jurisdiction" data-value="CH">🇨🇭 CH</div>
+    <div class="chip" data-filter="jurisdiction" data-value="AU">🇦🇺 AU</div>
+    <div class="chip" data-filter="jurisdiction" data-value="DK">🇩🇰 DK</div>
+    <div class="chip" data-filter="jurisdiction" data-value="KY">🏝️ KY</div>
+    <div class="chip" data-filter="jurisdiction" data-value="CN">🇨🇳 CN</div>
+    <div class="chip" data-filter="jurisdiction" data-value="HK">🇭🇰 HK</div>
+  </div>
+
+  <div class="results-info">
+    <div>Rezultate: <span class="results-count" id="results-count">0</span></div>
+    <div id="filter-summary"></div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="instruments-table">
+      <thead>
+        <tr>
+          <th data-sort="name">Nume</th>
+          <th data-sort="type">Tip</th>
+          <th data-sort="jurisdiction">Țară</th>
+          <th data-sort="isin">ISIN</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  </div><!-- /view-list -->
+
+  <div class="view" id="view-earlybird">
+
+    <div class="notice">
+      <strong>🌱 Early Bird scanner.</strong> Identifică instrumente în <strong>pre-breakout momentum</strong> — zi pozitivă mică, RSI neutru, accelerare 3z vs 7z, <strong>confirmare de volum</strong> și poziție sănătoasă în range-ul de <strong>52 săptămâni</strong>. Sursă de preț: <strong>Yahoo Finance</strong> (US + EU, fără API key) — rezolvă ISIN→ticker cu sufixul corect de bursă (.DE, .PA, .AS, .MI, .L, .MC…).
+      <span class="warn">Atenție:</span> Yahoo se accesează printr-un proxy CORS, deci scanarea <strong>NU merge din fișier local (file://)</strong> — publică pagina pe GitHub Pages/Netlify. Simbolurile și prețurile (pe zi) se păstrează în cache.
+    </div>
+
+    <div class="filters">
+      <span class="filter-label">Tip:</span>
+      <div class="chip active" data-ebfilter="type" data-value="all">Toate</div>
+      <div class="chip" data-ebfilter="type" data-value="Common Stock">Acțiuni</div>
+      <div class="chip" data-ebfilter="type" data-value="ETF">ETF</div>
+      <div class="chip" data-ebfilter="type" data-value="ETP">ETP</div>
+    </div>
+    <div class="filters">
+      <span class="filter-label">Țară:</span>
+      <div class="chip active" data-ebfilter="jurisdiction" data-value="all">Toate</div>
+      <div class="chip" data-ebfilter="jurisdiction" data-value="US">🇺🇸 US</div>
+      <div class="chip" data-ebfilter="jurisdiction" data-value="DE">🇩🇪 DE</div>
+      <div class="chip" data-ebfilter="jurisdiction" data-value="IE">🇮🇪 IE</div>
+      <div class="chip" data-ebfilter="jurisdiction" data-value="FR">🇫🇷 FR</div>
+      <div class="chip" data-ebfilter="jurisdiction" data-value="NL">🇳🇱 NL</div>
+      <div class="chip" data-ebfilter="jurisdiction" data-value="GB">🇬🇧 GB</div>
+      <div class="chip" data-ebfilter="jurisdiction" data-value="IT">🇮🇹 IT</div>
+      <div class="chip" data-ebfilter="jurisdiction" data-value="ES">🇪🇸 ES</div>
+      <div class="chip" data-ebfilter="jurisdiction" data-value="CH">🇨🇭 CH</div>
+    </div>
+
+    <div class="scan-controls">
+      <button class="scan-btn" id="scanBtn" onclick="startEarlyScan()">⚡ Scanează momentum</button>
+      <button class="ai-btn" id="aiCompareBtn" onclick="aiCompareEarly()" disabled>🧠 Compară cu AI</button>
+      <button class="ai-btn" id="csvBtn" onclick="exportEarlyCsv()" disabled style="border-color:var(--green);color:var(--green)">⬇ Export CSV</button>
+      <label class="scan-hint" style="display:flex;gap:6px;align-items:center">Sortează:
+        <select id="ebSort" onchange="resortEarly()" style="background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-family:'DM Mono',monospace;font-size:11px">
+          <option value="score">Scor</option>
+          <option value="chg">Zi %</option>
+          <option value="rsi">RSI</option>
+          <option value="w3">3 zile %</option>
+          <option value="vol">Volum (×medie)</option>
+        </select>
+      </label>
+      <span class="scan-hint" id="scanHint">Filtrează mai sus, apoi scanează.</span>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-label"><span id="progressText">Se scanează...</span><span id="progressPct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <div class="ai-result" id="aiResult"></div>
+
+    <div class="results-info">
+      <div>Candidați Early Bird: <span class="results-count" id="ebCount">0</span></div>
+      <div id="ebSummary"></div>
+    </div>
+
+    <div id="ebContainer">
+      <div class="empty-state">Apasă „Scanează momentum" pentru a analiza instrumentele filtrate.</div>
+    </div>
+
+  </div><!-- /view-earlybird -->
+
+  <div class="footer">
+    Generat din PDF-ul oficial Salt Bank · Update: 21.05.2026 · 532 instrumente
+  </div>
+
+</div>
+
+<script>
+const INSTRUMENTS = [{"isin": "DE0007030009", "name": "Rheinmetall AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US67066G1040", "name": "Nvidia Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000RENK730", "name": "RENK Group AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US88160R1014", "name": "Tesla Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0008404005", "name": "Allianz SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "CNE100000296", "name": "BYD Co. Ltd.", "type": "Common Stock", "jurisdiction": "CN"}, {"isin": "IE00B4L5Y983", "name": "HENSOLDT AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000HAG0005", "name": "Apple Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US0378331005", "name": "Siemens Energy AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000ENER6Y0", "name": "Amazon.com Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US0231351067", "name": "Deutsche Bank AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0005140008", "name": "Palantir Technologies Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US69608A1088", "name": "Berkshire Hathaway Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US0846707026", "name": "Microsoft Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US5949181045", "name": "Alphabet Inc. Class A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US02079K3059", "name": "Novo-Nordisk AS", "type": "Common Stock", "jurisdiction": "DK"}, {"isin": "DK0062498333", "name": "Deutsche Telekom AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0005557508", "name": "MicroStrategy Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US5949724083", "name": "SAP SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0007164600", "name": "BASF SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000BASF111", "name": "Xiaomi Corp. Cl.B", "type": "Common Stock", "jurisdiction": "KY"}, {"isin": "KYG9830T1067", "name": "Mercedes-Benz Group AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0007100000", "name": "Commerzbank AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000CBK1001", "name": "Siemens AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0007236101", "name": "Münchener Rückvers.-Ges. AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0008430026", "name": "thyssenkrupp AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0007500001", "name": "Bayer AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US30303M1027", "name": "Infineon Technologies AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0006231004", "name": "ASML Holding N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "DE0005933931", "name": "Coinbase Global Inc. Cl.A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0007037129", "name": "Vonovia SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BK5BQT80", "name": "E.ON SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "NL0010273215", "name": "Airbus SE", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "US19260Q1076", "name": "Deutsche Lufthansa AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000A1ML7J1", "name": "TUI AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00B5BMR087", "name": "Bayerische Motoren Werke AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000ENAG999", "name": "Deutsche Post AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "NL0000235190", "name": "UnitedHealth Group Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0008232125", "name": "Advanced Micro Devices Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000TUAG505", "name": "Daimler Truck Holding AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0005190003", "name": "LVMH Moët Henn. L. Vuitton SE", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "IE00BJ0KDQ92", "name": "Heidelberg Materials AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0005552004", "name": "Super Micro Computer Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US91324P1021", "name": "DEUTZ AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US0079031078", "name": "Broadcom Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B3RBWM25", "name": "NIKE Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000DTR0CK8", "name": "Intel Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "FR0000121014", "name": "PUMA SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "LU0274211480", "name": "Alphabet Inc. Class C", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0006047004", "name": "Leon.-Finmeccan.Spa (Leonardo)", "type": "Common Stock", "jurisdiction": "IT"}, {"isin": "US86800U3023", "name": "BP PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "DE0006305006", "name": "Shell PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "FR0010510800", "name": "Pfizer Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B6R52259", "name": "freenet AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US11135F1012", "name": "adidas AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE000YYE6WK5", "name": "MTU Aero Engines AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US6541061031", "name": "Linde plc", "type": "Common Stock", "jurisdiction": "IE"}, {"isin": "DE000PAG9113", "name": "Netflix.com Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B3XXRP09", "name": "Coca-Cola Co., The", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000A0F5UF5", "name": "Redcare Pharmacy N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "NL0011683594", "name": "PayPal Holdings Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US4581401001", "name": "Robinhood Markets Inc. Cl.A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE0002Y8CX98", "name": "Boeing Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0006969603", "name": "Hims & Hers Health Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B4X9L533", "name": "Evotec SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US02079K1079", "name": "Eli Lilly & Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IT0003856405", "name": "PepsiCo Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "LU0908500753", "name": "British American Tobacco PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "GB0007980591", "name": "Deutsche Börse AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "GB00BP6MXD84", "name": "AIXTRON SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00B3WJKG14", "name": "Gerresheimer AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US7170811035", "name": "Newmont Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BFMXXD54", "name": "VISA Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000A0Z2ZZ5", "name": "Eutelsat Communications", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "IE00B53SZB19", "name": "Gamestop Corp. Class A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000A1EWWW0", "name": "Micron Technology Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000A0D9PT0", "name": "Hannover Rück SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE000S9YS762", "name": "Rio Tinto PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "US64110L1061", "name": "Fresenius SE & Co. KGaA", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US1912161007", "name": "Merck KGaA", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BGV5VN51", "name": "OMV AG", "type": "Common Stock", "jurisdiction": "AT"}, {"isin": "NL0012044747", "name": "Plug Power Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US70450Y1038", "name": "Zalando SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US7707001027", "name": "Nordex AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US0970231058", "name": "Salesforce Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE000BI8OT95", "name": "Applovin Corp. Cl.A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US4330001060", "name": "DWS Group GmbH & Co. KGaA", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0005664809", "name": "THALES S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "US5324571083", "name": "DroneShield Limited", "type": "Common Stock", "jurisdiction": "AU"}, {"isin": "US7134481081", "name": "Wacker Chemie AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0006289382", "name": "Delivery Hero SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000PAH0038", "name": "Johnson&Johnson", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "GB0002875804", "name": "TotalEnergies SE", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "DE0005810055", "name": "Oracle Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000A0WMPJ6", "name": "BAE Systems PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "DE000A0LD6E6", "name": "Axa S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "US6516391066", "name": "RTL Group S.A.", "type": "Common Stock", "jurisdiction": "LU"}, {"isin": "IE00B8GKDB10", "name": "Procter & Gamble Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US92826C8394", "name": "ING Groep N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "FR0010221234", "name": "Crowdstrike Holdings Inc Cl.A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BM67HT60", "name": "Siemens Healthineers AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BFY0GT14", "name": "Evonik Industries AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US36467W1099", "name": "Rolls Royce Holdings PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "US5951121038", "name": "Lockheed Martin", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0008402215", "name": "HOCHTIEF AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00B3YLTY66", "name": "CureVac N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "DE0007165631", "name": "Walmart Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "GB0007188757", "name": "Tencent Holdings Ltd.", "type": "Common Stock", "jurisdiction": "KY"}, {"isin": "DE0005785604", "name": "Intl Business Machines Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0006599905", "name": "Kontron AG", "type": "Common Stock", "jurisdiction": "AT"}, {"isin": "AT0000743059", "name": "Adyen N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "FR0010315770", "name": "Exxon Mobil Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US72919P2020", "name": "McDonalds Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000ZAL1111", "name": "First Majestic Silver Corp.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "DE000A0D6554", "name": "Kraft Heinz Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US79466L3024", "name": "Bilfinger SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "LU2611732046", "name": "Uber Technologies Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US03831W1080", "name": "TeamViewer SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000ETFL011", "name": "KION GROUP AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000DWS1007", "name": "BigBear.ai Holdings Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "FR0000121329", "name": "MasterCard Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "AU000000DRO2", "name": "JPMorgan Chase & Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "LU0274208692", "name": "Alzchem Group AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000WCH8881", "name": "Mutares SE & Co. KGaA", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000A2E4K43", "name": "Stellantis N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "US4781601046", "name": "Agnico Eagle Mines Ltd.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "IE00BKM4GZ66", "name": "Adobe Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "FR0000120271", "name": "Uranium Energy Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE0006WW1TQ4", "name": "K+S Aktiengesellschaft", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US68389X1054", "name": "BlackRock Funding Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BYX2JD69", "name": "Continental AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "GB0002634946", "name": "IONOS Group SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BK1PV551", "name": "Sanofi S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "FR0000120628", "name": "BNP Paribas S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "LU2572257124", "name": "JENOPTIK AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "LU0061462528", "name": "Hermes International S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "US7427181091", "name": "Block Inc. Class A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "NL0011821202", "name": "SPOTIFY TECHNOLOGY S.A.", "type": "Common Stock", "jurisdiction": "LU"}, {"isin": "DE0002635307", "name": "Merck & Co. Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "LU2641054551", "name": "SMA Solar Technology AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US22788C1053", "name": "Walt Disney Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000SHL1006", "name": "UniCredit S.p.A.", "type": "Common Stock", "jurisdiction": "IT"}, {"isin": "DE000EVNK013", "name": "Volkswagen AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE0032077012", "name": "Marathon Digital Holdings Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "GB00B63H8491", "name": "Occidental Petroleum Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "LU0629459743", "name": "ProSiebenSat.1 Media SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "FR0010655712", "name": "Arista Networks Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US5398301094", "name": "United Internet AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "LU0533033667", "name": "Commonwealth Bank Of Australia", "type": "Common Stock", "jurisdiction": "AU"}, {"isin": "DE0006070006", "name": "Verizon Communications Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "LU1829221024", "name": "Mercadolibre Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "NL0015436031", "name": "Pan American Silver Corp.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "US9311421039", "name": "Talanx AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "KYG875721634", "name": "AUTO1 Group SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US4592001014", "name": "Unilever PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "AT0000A0E9W5", "name": "Bechtle AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "NL0012969182", "name": "SFC Energy AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US30231G1022", "name": "Friedrich Vorwerk Group SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US5801351017", "name": "Caterpillar Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "CA32076V1031", "name": "ITM Power PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "US5007541064", "name": "SUSS MicroTec SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0005909006", "name": "Schneider Electric SE", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "US90353T1007", "name": "The Trade Desk Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0006048432", "name": "Booking Holdings Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B945VV12", "name": "Altria Group Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "LU0274209740", "name": "flatexDEGIRO AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000A2YN900", "name": "Vossloh AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00B44Z5B48", "name": "Palo Alto Networks Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000KGX8881", "name": "VINCI S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "US08975B1098", "name": "Canadian Paci.Kansas City Ltd.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "IE00B0M62Q58", "name": "BHP Group Ltd.", "type": "Common Stock", "jurisdiction": "AU"}, {"isin": "US57636Q1040", "name": "Intesa Sanpaolo S.p.A.", "type": "Common Stock", "jurisdiction": "IT"}, {"isin": "US46625H1005", "name": "Deutsche Pfandbriefbank AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000A2YNT30", "name": "Beiersdorf AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000A2NB650", "name": "Strabag SE", "type": "Common Stock", "jurisdiction": "AT"}, {"isin": "NL00150001Q9", "name": "Engie S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "CA0084741085", "name": "GE Aerospace", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BJQRDM08", "name": "Brenntag SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US00724F1012", "name": "Quantum eMotion Corp.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "US9168961038", "name": "TRATON SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000KSAG888", "name": "LEG Immobilien SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US09290D1019", "name": "Cameco Corp.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "DE0005439004", "name": "Vodafone Group PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "DE000A3E00M1", "name": "Enel S.P.A.", "type": "Common Stock", "jurisdiction": "IT"}, {"isin": "FR0000120578", "name": "Heidelberger Druckmaschinen AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BCRY6557", "name": "LANXESS AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BKX55R35", "name": "Thermo Fisher Scientific Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "FR0000131104", "name": "Cisco Systems Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000A2NB601", "name": "T-Mobile US Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "FR0000052292", "name": "Dell Technologies Inc. Shares C", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B4K48X80", "name": "Carl Zeiss Meditec AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BP3QZ601", "name": "Prysmian S.p.A.", "type": "Common Stock", "jurisdiction": "IT"}, {"isin": "IE00B53L4350", "name": "ServiceNow Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US8522341036", "name": "Qualcomm Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "LU1778762911", "name": "AT & T Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B60SX394", "name": "BCO Santander Centr.Hispano SA", "type": "Common Stock", "jurisdiction": "ES"}, {"isin": "US58933Y1055", "name": "Goldman Sachs Group Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000A0DJ6J9", "name": "ENI S.P.A.", "type": "Common Stock", "jurisdiction": "IT"}, {"isin": "US2546871060", "name": "Royal Bank of Canada", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "IT0005239360", "name": "Symrise AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BF4RFH31", "name": "Hapag-Lloyd AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0007664005", "name": "Shopify Inc.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "US5657881067", "name": "American Express Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US6745991058", "name": "AbbVie Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000PSM7770", "name": "Aurubis AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US0404132054", "name": "Moderna Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0005089031", "name": "Sixt SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "AU000000CBA7", "name": "HelloFresh SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US92343V1044", "name": "Fresenius Medical Care AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BG47KH54", "name": "Vertiv Holdings Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BTJRMP35", "name": "Vestas Wind Systems AS", "type": "Common Stock", "jurisdiction": "DK"}, {"isin": "US58733R1023", "name": "SAFRAN", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "CA6979001089", "name": "GE Vernova Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000TLX1005", "name": "Danaher Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B5L8K969", "name": "Riot Platforms Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "LU0252633754", "name": "Salzgitter AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "LU1829220216", "name": "CEOTRONICS AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000A2LQ884", "name": "Bitcoin Group SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "GB00B10RZP78", "name": "Astrazeneca PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "DE0005158703", "name": "Wheaton Precious Metals Corp.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "DE0006219934", "name": "Vistra Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BGHQ0G80", "name": "Canopy Growth Corp.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "DE0007568578", "name": "Geely Automobile Holdings Ltd.", "type": "Common Stock", "jurisdiction": "KY"}, {"isin": "DE000A255F11", "name": "Aroundtown Property Hldgs S.A.", "type": "Common Stock", "jurisdiction": "LU"}, {"isin": "US1491231015", "name": "L Oreal S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "IE00BMFKG444", "name": "3M Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "GB00B0130H42", "name": "Borussia Dortmund GmbH&Co.KGaA", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000A1K0235", "name": "Air Liquide-SA Et.Expl.P.G.Cl.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "FR0000121972", "name": "2G Energy AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0005933923", "name": "Cloudflare Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US88339J1051", "name": "Siltronic AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US09857L1089", "name": "RTX Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US02209S1033", "name": "thyssenkrupp nucera AG&Co.KGaA", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE000FTG1111", "name": "Société Générale S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "IE0001UQQ933", "name": "HUGO BOSS AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BZCQB185", "name": "Iberdrola S.A.", "type": "Common Stock", "jurisdiction": "ES"}, {"isin": "DE0007667107", "name": "Costco Wholesale Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US6974351057", "name": "SolarEdge Technologies Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "FR0000125486", "name": "GSK PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "CA13646K1084", "name": "NN Group N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "IE00B3VVMM84", "name": "Verbio SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "AU000000BHP4", "name": "Stabilus SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IT0000072618", "name": "HSBC Holdings PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "DE0008019001", "name": "Stryker Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B57X3V84", "name": "EssilorLuxottica S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "IE00BKX55T58", "name": "Home Depot Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BMC38736", "name": "iShares Core MSCI Emerging Markets IMI UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00BM8R0J59", "name": "iShsIII-Cor.MSCI Wld UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00BZ02LR44", "name": "iShares Core DAX UCITS", "type": "ETF", "jurisdiction": "DE"}, {"isin": "DE0005200000", "name": "Vanguard FTSE All-World U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "AT000000STR1", "name": "iShsVII-Core S&P 500 UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "FR0010208488", "name": "Xtr.(IE) - MSCI World 1C", "type": "ETF", "jurisdiction": "IE"}, {"isin": "LU0496786574", "name": "Vanguard FTSE All-World U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US3696043013", "name": "Xtrackers DAX", "type": "ETF", "jurisdiction": "LU"}, {"isin": "DE000A1DAHH0", "name": "iShs V-MSCI ACWI UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "CA74767K1030", "name": "VanEck ETFs-VanEck Defense", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000TRAT0N7", "name": "Vanguard S&P 500 UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000LEG1110", "name": "iShare.NASDAQ-100 UCITS", "type": "ETF", "jurisdiction": "DE"}, {"isin": "CA13321L1085", "name": "VanEck Vect.Mo.De.Ma.Div.Lea.", "type": "ETF", "jurisdiction": "NL"}, {"isin": "GB00BH4HKS39", "name": "WisdomTree-Eur.Defence", "type": "ETF", "jurisdiction": "IE"}, {"isin": "LU0950674332", "name": "Amundi Stoxx Eur.600 UCITS", "type": "ETF", "jurisdiction": "LU"}, {"isin": "IE00BP3QZ825", "name": "iShsV-S&P 500 Inf.Te.Sec.U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IT0003128367", "name": "Vanguard S&P 500 UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0007314007", "name": "iShsVII-NASDAQ 100 UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0005470405", "name": "Xtr.(IE)-Art.Int.+Big Data", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00BL25JP72", "name": "Am.ETF I.-MSCI World U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00B1YZSC51", "name": "iSh.DJ Glob.Titans 50 U.ETF DE", "type": "ETF", "jurisdiction": "DE"}, {"isin": "US8835561023", "name": "Vang.FTSE A.-Wo.Hi.Di.Yi.U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US17275R1023", "name": "Xtr.(IE)-MSCI Wo.Inform.Techn.", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE000Y77LGG9", "name": "SPDR MSCI World UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US8725901040", "name": "SPDR MSCI ACW IM UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US24703L2025", "name": "Deka DAX UCITS", "type": "ETF", "jurisdiction": "DE"}, {"isin": "DE0005313704", "name": "Xtr.IE-Xtr.MSCI Wld EX USA", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IT0004176001", "name": "iShsIV-MSCI Wld.SRI UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US81762P1021", "name": "Xtr.(IE) - MSCI World 1D", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US7475251036", "name": "iSh.STOXX Europe 600 U.ETF DE", "type": "ETF", "jurisdiction": "DE"}, {"isin": "IE00BQQP9F84", "name": "I.M.III-I.EQQQ NASDAQ-100 UETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US00206R1023", "name": "Amundi MSCI World Inf Tech UCITS ETACC", "type": "ETF", "jurisdiction": "LU"}, {"isin": "ES0113900J37", "name": "Amundi Nasdaq 100 II UCITS", "type": "ETF", "jurisdiction": "LU"}, {"isin": "US38141G1040", "name": "Vanguard FTSE Dev.Europe U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IT0003132476", "name": "Xtrackers MSCI Japan", "type": "ETF", "jurisdiction": "LU"}, {"isin": "CA7800871021", "name": "SPDR MSCI ACW UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000SYM9999", "name": "iShsIV-EO Ultrashort Bd U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00BYVQ9F29", "name": "Vanguard FTSE N.America U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000HLAG475", "name": "iShsIII-C.MSCI Eu.U.E.EUR Acc", "type": "ETF", "jurisdiction": "IE"}, {"isin": "CA82509L1076", "name": "iShs IV-MSCI Wld Qual.Fac.U.E.", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US0258161092", "name": "iShsVII-DJ Ind.Average UC.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US00287Y1091", "name": "iShsIII-MSCI Wld Sm.Ca.UCI.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE0003UVYC20", "name": "Xtr.(IE)-MSCI Emerging Markets", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00BK5BQX27", "name": "iShsVII-MSCI EM Asia UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00BM67HK77", "name": "Xtr.(IE)-MSCI AC World ESG Sc.", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0006766504", "name": "Xtr.IE)Xtr.NASDAQ 100", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US60770K1079", "name": "iShares MDAX UCITS", "type": "ETF", "jurisdiction": "DE"}, {"isin": "DE0007231326", "name": "LEG&GEN UCITS/SHS CL-ACCUMG", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000A161408", "name": "iShs IV-iShs MSCI India UC.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0005785802", "name": "Vanguard FTSE Em.Markets U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US92537N1081", "name": "Vang.FTSE Develop.World U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DK0061539921", "name": "VanEck Semiconductor UC.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "FR0000073272", "name": "iShs IV-MSCI Wld Momn.Fac.U.E.", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US36828A1016", "name": "Xtr.(IE) - MSCI World Momentum", "type": "ETF", "jurisdiction": "IE"}, {"isin": "LU1681048804", "name": "iShsII-MSCI Europe UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE000RHYOR04", "name": "VanEck Vect.Gold Miners UC.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US2358511028", "name": "iShsVII-NASDAQ 100 UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00B60SX170", "name": "JPM ETFs-Glb. Eq.Prem.Inc.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US7672921050", "name": "Vanguard FTSE Dev.Europe U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0007231334", "name": "Xtr.(IE)-MSCI Wrld Health Care", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0006202005", "name": "iShsIV-EO Ultrashort Bd U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0005407407", "name": "Source Mkts-S.MSCI USA U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000ETFL060", "name": "Vang.FTSE Develop.World U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00BL25JM42", "name": "Amundi Euro Stoxx Banks UCITS", "type": "ETF", "jurisdiction": "LU"}, {"isin": "IE00BK5BQV03", "name": "MUL-Amundi Smart.Overn.Return", "type": "ETF", "jurisdiction": "LU"}, {"isin": "LU1829219390", "name": "Xtr.(IE) - MSCI World Quality", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000A1TNV91", "name": "iShares VI-Automation&Robotics", "type": "ETF", "jurisdiction": "IE"}, {"isin": "GB0009895292", "name": "GL X ETFS ICAV-SUPERDIV.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "CA9628791027", "name": "iShsV-S&P Gold Produc.UCIT", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US92840M1027", "name": "Lyxor", "type": "ETF", "jurisdiction": "FR"}, {"isin": "CA1380357048", "name": "HSBC MSCI WORLD UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "LU2082999306", "name": "Lyxor", "type": "ETF", "jurisdiction": "FR"}, {"isin": "KYG3777B1032", "name": "Amu.Idx Sol.Amu.DAX", "type": "ETF", "jurisdiction": "LU"}, {"isin": "IE00B3F81R35", "name": "Xtrackers MSCI World Swap 1C", "type": "ETF", "jurisdiction": "LU"}, {"isin": "LU1673108939", "name": "Amu.Idx Sol.Amu.MSCI Wld III", "type": "ETF", "jurisdiction": "LU"}, {"isin": "FR0000120321", "name": "Xtr.II-Germany Gov.Bd 0-1", "type": "ETF", "jurisdiction": "LU"}, {"isin": "US88579Y1010", "name": "UBS-ETF-MSCI World Soc.Resp.", "type": "ETF", "jurisdiction": "LU"}, {"isin": "IE00BL25JL35", "name": "AMUNDI", "type": "ETF", "jurisdiction": "FR"}, {"isin": "IE000LAP5Z18", "name": "iShs MSCI World UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0005493092", "name": "I.M.II-MSCI US.ESG U.Scr.U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00B6YX5C33", "name": "Source Mkts-S.MSCI World U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "FR0000120073", "name": "Vanguard Fds-Gl.Aggr.Bd UC.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000A0F5UJ7", "name": "Lyxor", "type": "ETF", "jurisdiction": "LU"}, {"isin": "DE000A0HL8N9", "name": "Amundi MSCI AC World UCITS", "type": "ETF", "jurisdiction": "LU"}, {"isin": "LU1615092217", "name": "iShsII-DJ Glb.Leaders Scr.UETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US18915M1071", "name": "Gl X ETF-Gl X Nas.100 Cov.Call", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00BYZK4552", "name": "Xtr.(IE)-MSCI World ESG", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00077FRP95", "name": "Amundi S&P 500 II UCITS", "type": "ETF", "jurisdiction": "LU"}, {"isin": "DE000WAF3001", "name": "UBS-ETF-MSCI World Soc.Resp.", "type": "ETF", "jurisdiction": "LU"}, {"isin": "US75513E1010", "name": "Am.ETF-MSCI W.SRI CL.N.Z.AM.P.", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000NCA0001", "name": "AIS-Amundi Index S&P 500", "type": "ETF", "jurisdiction": "LU"}, {"isin": "FR0000130809", "name": "Deka DAX(ausschütt.)UCITS", "type": "ETF", "jurisdiction": "DE"}, {"isin": "DE000A1PHFF7", "name": "Xtr.(IE) - MSCI World Value", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00B60SWW18", "name": "iShsIII-Core EO Corp.Bd U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "ES0144580Y14", "name": "Amundi S&P 500 Equal Weight ESG Leaders UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US22160K1051", "name": "SPDR S&P 500 UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE000CNSFAR2", "name": "iSh.ST.Euro.600 Banks U.ETF DE", "type": "ETF", "jurisdiction": "DE"}, {"isin": "US83417M1045", "name": "BNPPE-MSCI Wrld SRI S-Ser.5%C.", "type": "ETF", "jurisdiction": "LU"}, {"isin": "GB00BN7SWP63", "name": "Source Mkts-S.STXXEur.600U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00B6R52036", "name": "Am.ETF I.-MSCI World U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "NL0010773842", "name": "M.U.L.-Lyxor Nasdaq-100 UC.ETF", "type": "ETF", "jurisdiction": "LU"}, {"isin": "DE000A0JL9W6", "name": "iShsIV-DL Sh.Du.H.Y.C.Bd U.ETF", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE000STAB1L8", "name": "Volkswagen AG VZ", "type": "Preference", "jurisdiction": "DE"}, {"isin": "LU2197908721", "name": "Dr. Ing. h.c. F. Porsche AG Inhaber-Vorzugsaktien", "type": "Preference", "jurisdiction": "DE"}, {"isin": "GB0005405286", "name": "Porsche Automobil Holding SE", "type": "Preference", "jurisdiction": "DE"}, {"isin": "IE00BCRY6003", "name": "Sartorius AG VZ", "type": "Preference", "jurisdiction": "DE"}, {"isin": "US8636671013", "name": "Henkel AG & Co. KGaA VZ", "type": "Preference", "jurisdiction": "DE"}, {"isin": "FR0000121667", "name": "Jungheinrich AG VZ", "type": "Preference", "jurisdiction": "DE"}, {"isin": "US4370761029", "name": "Sixt SE VZ", "type": "Preference", "jurisdiction": "DE"}, {"isin": "US83406F1021", "name": "SoFi Technologies Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BFXR5T61", "name": "L&G JAPAN EQUITY UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "AU000000LYC6", "name": "Lynas Rare Earths Ltd.", "type": "Common Stock", "jurisdiction": "AU"}, {"isin": "KYG017191142", "name": "Alibaba Group Holding Ltd.", "type": "Common Stock", "jurisdiction": "KY"}, {"isin": "FR0010527275", "name": "L.MSCI Wat.ESG F.(DR)UCITS", "type": "ETF", "jurisdiction": "FR"}, {"isin": "DE000A161N30", "name": "GRENKE AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BHZRQZ17", "name": "Franklin Lib.FTSE India U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "CA4969024047", "name": "Kinross Gold Corp.", "type": "Common Stock", "jurisdiction": "CA"}, {"isin": "DE000A1EWVY8", "name": "Formycon AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0006200108", "name": "INDUS Holding AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US94106L1098", "name": "Waste Management Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BJ5JPG56", "name": "iShsIV-MSCI China UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US3364331070", "name": "First Solar Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US3703341046", "name": "General Mills Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0005493365", "name": "Hypoport SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00B3ZW0K18", "name": "iShsV-S&P500 EUR Hgd U.ETF (A)", "type": "ETP", "jurisdiction": "IE"}, {"isin": "DE000LS1LUS9", "name": "Lang & Schwarz AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BLNMYC90", "name": "Xtr.(IE)-S&P 500 Equal Weight", "type": "ETP", "jurisdiction": "IE"}, {"isin": "US8740541094", "name": "Take-Two Interactive Softw.Inc", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0007461006", "name": "PVA TePla AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0005773303", "name": "Fraport AG Ffm.Airport.Ser.AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "GB0002374006", "name": "Diageo PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "US21037T1097", "name": "Constellation Energy Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "FR0000124141", "name": "Veolia Environnement S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "ES0173516115", "name": "Repsol S.A.", "type": "Common Stock", "jurisdiction": "ES"}, {"isin": "GB0031215220", "name": "Carnival PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "DE0005772206", "name": "Fielmann Group AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0007276503", "name": "secunet Security Networks AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00B53L3W79", "name": "iShs VII-Co.EO STOXX 50 UC.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "US8552441094", "name": "Starbucks Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B8FHGS14", "name": "iShs VI-E.MSCI Wld Min.Vo.U.E.", "type": "ETP", "jurisdiction": "IE"}, {"isin": "DE0005800601", "name": "GFT Technologies SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE000I7E6HL0", "name": "HanETF-Future of Europ.Defence", "type": "ETP", "jurisdiction": "IE"}, {"isin": "US44812J1043", "name": "HUT 8 Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000ETFL227", "name": "Deka Dt.B.EOG.G.Mo.M.UCITS", "type": "ETF", "jurisdiction": "DE"}, {"isin": "US18452B2097", "name": "Cleanspark Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE000JCW3DZ3", "name": "Glbl X ETFs-DEFENCE TECH", "type": "ETF", "jurisdiction": "IE"}, {"isin": "LU1681045537", "name": "AIS-Amundi MSCI World ex Euro.", "type": "ETP", "jurisdiction": "LU"}, {"isin": "DK0010244508", "name": "A.P.Moeller-Mærsk A/S B", "type": "Common Stock", "jurisdiction": "DK"}, {"isin": "LU0460391732", "name": "Xtr.BBG Comm.ex-Agr.+Livest.Sw", "type": "ETP", "jurisdiction": "LU"}, {"isin": "US0090661010", "name": "Airbnb Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US6700024010", "name": "Novavax Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BYWQWR46", "name": "VanEck Vid eSports UC.", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00BHJYDV33", "name": "I.M.II-In.MDAX UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00B7KMNP07", "name": "UBS(I)ETF-Sol.Gl.Pu.G.Min.U.E.", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE00BQQP9G91", "name": "V.E.Vect.Junior Gold Min.U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE00B4L5YC18", "name": "iShsIII-MSCI EM U.ETF USD(Acc)", "type": "ETP", "jurisdiction": "IE"}, {"isin": "KYG286871044", "name": "Diginex Ltd.", "type": "Common Stock", "jurisdiction": "KY"}, {"isin": "US8334451098", "name": "Snowflake Inc.Cl.A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US0311621009", "name": "Amgen Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US0382221051", "name": "Applied Materials Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BNDS1Q47", "name": "VanguardFds-ESG Gl Corp.Bd", "type": "ETF", "jurisdiction": "IE"}, {"isin": "NL0013654783", "name": "Prosus N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "AT0000609607", "name": "Porr AG", "type": "Common Stock", "jurisdiction": "AT"}, {"isin": "IE00BMWXKN31", "name": "HSBC ETFS-H.Hang Seng Tech", "type": "ETP", "jurisdiction": "IE"}, {"isin": "AU0000185993", "name": "IREN Ltd.", "type": "Common Stock", "jurisdiction": "AU"}, {"isin": "US4227041062", "name": "Hecla Mining Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B6YX5D40", "name": "SPDR S&P US Divid.Aristocr.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE000I8IKC59", "name": "IMII-MSCI J.ESG Cl.Par.Al.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "US1468691027", "name": "Carvana Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0005313506", "name": "Energiekontor AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "DE0005565204", "name": "Dürr AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US0605051046", "name": "Bank of America Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US56035L1044", "name": "Main Street Capital Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0005659700", "name": "Eckert & Ziegler SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BD4TXV59", "name": "UBS(Irl)ETF-MSCI WORLD U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "AT0000BAWAG2", "name": "BAWAG Group AG", "type": "Common Stock", "jurisdiction": "AT"}, {"isin": "US1729674242", "name": "Citigroup Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US9113121068", "name": "United Parcel Service Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US65339F1012", "name": "Nextera Energy Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE0003XJA0J9", "name": "Amu.Prime All Country Wld USD", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0006335003", "name": "KRONES AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US2605571031", "name": "Dow Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US1101221083", "name": "Bristol-Myers Squibb Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US5128073062", "name": "Lam Research Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00B9CQXS71", "name": "SPDR S&P Glob.Div.Aristocr.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "ES0118594417", "name": "Indra Sistemas S.A.", "type": "Common Stock", "jurisdiction": "ES"}, {"isin": "IE00B52VJ196", "name": "iShsII-DJ Eur.Sust.Scr.UC.", "type": "ETF", "jurisdiction": "IE"}, {"isin": "AT0000606306", "name": "Raiffeisen Bank Intl AG", "type": "Common Stock", "jurisdiction": "AT"}, {"isin": "IE00B66F4759", "name": "iShs EO H.Yield Corp Bd U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE00BJQRDN15", "name": "InvescoM2-IQS Global Eq", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00B1XNHC34", "name": "iShsII-Gl.Clean Energy U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "DE000ETFL284", "name": "Deka MSCI Europe UCITS", "type": "ETF", "jurisdiction": "DE"}, {"isin": "NL0000334118", "name": "ASM International N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "FR0000133308", "name": "Orange S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "NL0011585146", "name": "Ferrari N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "IE00B3YCGJ38", "name": "I.M.-I.S&P 500 UETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "GB0004544929", "name": "Imperial Brands PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "FR0014004L86", "name": "Dassault Aviation S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "IE00BJZ2DD79", "name": "Xtr.(IE) - Russell 2000", "type": "ETP", "jurisdiction": "IE"}, {"isin": "US1921085049", "name": "Coeur Mining Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000KC01000", "name": "Klöckner & Co SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BYVJRR92", "name": "iShsIV-MSCI USA SRI UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US3755581036", "name": "Gilead Sciences Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BMDKNW35", "name": "VanEck Cr.and Blockch.Innv.", "type": "ETP", "jurisdiction": "IE"}, {"isin": "DE0005545503", "name": "1&1 AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BF51K249", "name": "InvescoMII-EUR IG Corp Bd U.E.", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE00BYYHSQ67", "name": "iShsII-MSCI Wld Qua.Div.Adv.UE", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE000QIF5N15", "name": "Amu.ETF ICAV-PRIME Glbl", "type": "ETF", "jurisdiction": "IE"}, {"isin": "NL0000226223", "name": "STMicroelectronics N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "DE000ETFL029", "name": "Deka EURO STOXX 50 UCITS", "type": "ETF", "jurisdiction": "DE"}, {"isin": "IE00B1TXK627", "name": "iShsII-Global Water UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "IE00B14X4S71", "name": "iShs PLC-$ Treas.Bd 1-3yr U.E.", "type": "ETP", "jurisdiction": "IE"}, {"isin": "US35671D8570", "name": "Freeport-McMoRan Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000WACK012", "name": "Wacker Neuson SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE00BHZPJ239", "name": "iShsIV-MSCI EM.ESG.Enh.U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IT0005508921", "name": "Bca Monte dei Paschi di Siena", "type": "Common Stock", "jurisdiction": "IT"}, {"isin": "IE0032895942", "name": "iShs DL Corp Bond UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US3377381088", "name": "Fiserv Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BGJWWY63", "name": "I.M.II-In.Euro Gov.Bd.1-3 Year", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE000716YHJ7", "name": "Inv.Mkt.II-FTSE All-Wld U.E. EOA", "type": "ETP", "jurisdiction": "IE"}, {"isin": "NL0015002CX3", "name": "Qiagen N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "US7010941042", "name": "Parker-Hannifin Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000A3H2200", "name": "Nagarro SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US5533681012", "name": "MP Materials Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0008303504", "name": "TAG Immobilien AG", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE000U9ODG19", "name": "iShsV-iShs US Aer.&Def.U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "DE0006569908", "name": "MLP SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "IE000UL6CLP7", "name": "Glbl X-Glbl X SILVER MINERS", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE00BJ0KDR00", "name": "Xtr.(IE) - MSCI USA", "type": "ETP", "jurisdiction": "IE"}, {"isin": "FR0010754200", "name": "Amundi", "type": "ETF", "jurisdiction": "FR"}, {"isin": "IE00B4BNMY34", "name": "Accenture Ltd.", "type": "Common Stock", "jurisdiction": "IE"}, {"isin": "IE00BF5GB717", "name": "iShs II-iShs E.Flt.Ra.Bd U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE000UQND7H4", "name": "HSBC MSCI WORLD UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "US91680M1071", "name": "Upstart Holdings Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "HK0992009065", "name": "Lenovo Group Ltd.", "type": "Common Stock", "jurisdiction": "HK"}, {"isin": "NL0012866412", "name": "BE Semiconductor Inds N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "IE00B5SSQT16", "name": "HSBC MSCI Em.Markts. UCITS", "type": "ETF", "jurisdiction": "IE"}, {"isin": "DE0006452907", "name": "Nemetschek SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "LU2439113387", "name": "AMUNDI Idx Sol.- EO AGG SRI", "type": "ETP", "jurisdiction": "LU"}, {"isin": "DE0005933972", "name": "iShares TecDAX UCITS", "type": "ETF", "jurisdiction": "DE"}, {"isin": "US0320951017", "name": "Amphenol Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "LU0490618542", "name": "Xtrackers S&P 500 Swap", "type": "ETP", "jurisdiction": "LU"}, {"isin": "IE00BSKRJZ44", "name": "iShs IV-iSh.$ Tr.Bd 20+yr U.E.", "type": "ETP", "jurisdiction": "IE"}, {"isin": "KYG6683N1034", "name": "Nu Holdings Ltd.", "type": "Common Stock", "jurisdiction": "KY"}, {"isin": "IE00BF2B0L69", "name": "FT ICAV-Fr.Eur.Qual.Div.U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "IE00BYPLS672", "name": "L&G-L&G Cyber Security U.ETF", "type": "ETP", "jurisdiction": "IE"}, {"isin": "US7181721090", "name": "Philip Morris Internat. Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US28176E1082", "name": "Edwards Lifesciences Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "FR0000120693", "name": "Pernod-Ricard S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "DE0006048408", "name": "Henkel AG & Co. KGaA Stammaktien", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "FR0000120644", "name": "Danone S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "ES0178430E18", "name": "Telefónica S.A.", "type": "Common Stock", "jurisdiction": "ES"}, {"isin": "NL0009538784", "name": "NXP Semiconductors NV", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "AT0000652011", "name": "Erste Group Bank AG", "type": "Common Stock", "jurisdiction": "AT"}, {"isin": "US9043111072", "name": "Under Armour Inc. Shs A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US1941621039", "name": "Colgate-Palmolive Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "CH0012005267", "name": "Novartis AG", "type": "Common Stock", "jurisdiction": "CH"}, {"isin": "FR0000120172", "name": "Carrefour S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "US42824C1099", "name": "Hewlett Packard Enterprise Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "IE00BYTBXV33", "name": "Ryanair Holdings PLC", "type": "Common Stock", "jurisdiction": "IE"}, {"isin": "US90364P1057", "name": "UiPath Inc. Cl.A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US2786421030", "name": "Ebay Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US2561631068", "name": "DocuSign Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "AT0000908504", "name": "Vienna Insurance Group", "type": "Common Stock", "jurisdiction": "AT"}, {"isin": "US9344231041", "name": "Warner Bros Discovery Inc. A", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US4627261005", "name": "iRobot Corp.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US3453708600", "name": "Ford Motor Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE0006083405", "name": "Hornbach Holding AG&Co.KGaA", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "FR0010220475", "name": "Alstom S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "FR0000131906", "name": "Renault S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "US6174464486", "name": "Morgan Stanley", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "FR001400J770", "name": "Air France-KLM S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "ES0140609019", "name": "Caixabank S.A.", "type": "Common Stock", "jurisdiction": "ES"}, {"isin": "US09260D1072", "name": "Blackstone Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US9100471096", "name": "United Airlines Holdings Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000A12DM80", "name": "Scout24 SE", "type": "Common Stock", "jurisdiction": "DE"}, {"isin": "US6311031081", "name": "Nasdaq Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "US5950171042", "name": "Microchip Technology Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "NL0000226223", "name": "Heineken N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "FR0000054470", "name": "Ubisoft Entertainment S.A.", "type": "Common Stock", "jurisdiction": "FR"}, {"isin": "US37045V1008", "name": "General Motors Co.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "CH0038863350", "name": "Nestlé S.A.", "type": "Common Stock", "jurisdiction": "CH"}, {"isin": "GB00BVZK7T90", "name": "Unilever PLC", "type": "Common Stock", "jurisdiction": "GB"}, {"isin": "NL0015002MS2", "name": "Magnum Ice Cream Co.N.V.", "type": "Common Stock", "jurisdiction": "NL"}, {"isin": "US88688T2096", "name": "Tilray Brands Inc.", "type": "Common Stock", "jurisdiction": "US"}, {"isin": "DE000TKMS001", "name": "TKMS AG & Co. KGaA", "type": "Common Stock", "jurisdiction": "DE"}];
+
+let filters = { type: 'all', jurisdiction: 'all', search: '' };
+let sortBy = 'name';
+let sortAsc = true;
+
+// Init stats
+document.getElementById('stat-total').textContent = INSTRUMENTS.length;
+document.getElementById('stat-stocks').textContent = INSTRUMENTS.filter(i => i.type === 'Common Stock').length;
+document.getElementById('stat-etf').textContent = INSTRUMENTS.filter(i => i.type === 'ETF').length;
+document.getElementById('stat-etp').textContent = INSTRUMENTS.filter(i => i.type === 'ETP').length;
+document.getElementById('stat-pref').textContent = INSTRUMENTS.filter(i => i.type === 'Preference').length;
+
+function render() {
+  let filtered = INSTRUMENTS.filter(item => {
+    if (filters.type !== 'all' && item.type !== filters.type) return false;
+    if (filters.jurisdiction !== 'all' && item.jurisdiction !== filters.jurisdiction) return false;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      const haystack = (item.name + ' ' + item.isin + ' ' + item.jurisdiction).toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a, b) => {
+    const av = (a[sortBy] || '').toString().toLowerCase();
+    const bv = (b[sortBy] || '').toString().toLowerCase();
+    if (av < bv) return sortAsc ? -1 : 1;
+    if (av > bv) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Niciun rezultat. Încearcă alt termen.</td></tr>';
+  } else {
+    tbody.innerHTML = filtered.map(item => `
+      <tr>
+        <td class="name">${escapeHtml(item.name)}</td>
+        <td><span class="type-badge type-${item.type.replace(' ', '.')}">${escapeHtml(item.type)}</span></td>
+        <td><span class="juris-badge">${escapeHtml(item.jurisdiction)}</span></td>
+        <td class="isin">${escapeHtml(item.isin)}</td>
+      </tr>
+    `).join('');
+  }
+
+  document.getElementById('results-count').textContent = filtered.length;
+  
+  // Filter summary
+  const parts = [];
+  if (filters.type !== 'all') parts.push(filters.type);
+  if (filters.jurisdiction !== 'all') parts.push(filters.jurisdiction);
+  if (filters.search) parts.push(`"${filters.search}"`);
+  document.getElementById('filter-summary').textContent = parts.length ? parts.join(' · ') : '';
+
+  // Update sort indicator
+  document.querySelectorAll('th').forEach(th => {
+    th.classList.remove('sorted', 'asc');
+    if (th.dataset.sort === sortBy) {
+      th.classList.add('sorted');
+      if (sortAsc) th.classList.add('asc');
+    }
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Chip handlers
+document.querySelectorAll('#view-list .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const filter = chip.dataset.filter;
+    const value = chip.dataset.value;
+    filters[filter] = value;
+    document.querySelectorAll(`.chip[data-filter="${filter}"]`).forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    render();
+  });
+});
+
+// Search
+document.getElementById('search').addEventListener('input', (e) => {
+  filters.search = e.target.value;
+  render();
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  document.getElementById('search').value = '';
+  filters = { type: 'all', jurisdiction: 'all', search: '' };
+  document.querySelectorAll('#view-list .chip').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('#view-list .chip[data-value="all"]').forEach(c => c.classList.add('active'));
+  render();
+});
+
+// Sort handlers
+document.querySelectorAll('th').forEach(th => {
+  th.addEventListener('click', () => {
+    const newSort = th.dataset.sort;
+    if (sortBy === newSort) {
+      sortAsc = !sortAsc;
+    } else {
+      sortBy = newSort;
+      sortAsc = true;
+    }
+    render();
+  });
+});
+
+// ─────────────────────────────────────────────
+// EARLY BIRD SCANNER (Twelve Data only — symbol_search resolves ISIN)
+// ─────────────────────────────────────────────
+
+// ─── Yahoo Finance (free, no API key) — accessed via CORS proxy ───
+// Yahoo always blocks cross-origin browser fetches, so we route through a proxy.
+// First attempt that returns valid JSON wins (direct → proxies, in order).
+const YH_SEARCH = q => `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=20&newsCount=0`;
+const YH_CHART  = s => `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?range=1y&interval=1d`;
+const PROXIES = [
+  u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+  u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+  u => `https://thingproxy.freeboard.io/fetch/${u}`,
+];
+async function proxiedJson(url){
+  const attempts = [url, ...PROXIES.map(p => p(url))];
+  for(const a of attempts){
+    try {
+      const r = await fetch(a, { headers: { 'Accept': 'application/json' } });
+      if(!r.ok) continue;
+      const j = await r.json();
+      if(j) return j;
+    } catch(e){ /* try next proxy */ }
+  }
+  return null;
+}
+
+// jurisdiction → preferred Yahoo exchange suffix(es). '' = US (no suffix).
+const JURIS_SUFFIX = {
+  US: [''], KY: [''],
+  DE: ['.DE','.F','.BE','.MU','.SG','.DU','.HM'],
+  FR: ['.PA'], NL: ['.AS'], IT: ['.MI'], ES: ['.MC'],
+  GB: ['.L'], CH: ['.SW','.VX'], AT: ['.VI'], DK: ['.CO'],
+  CA: ['.TO','.V'], AU: ['.AX'], HK: ['.HK'],
+  CN: ['.SS','.SZ','.HK'],
+  IE: ['.DE','.L','.AS','.MI','.PA',''],  // Irish-domiciled ETFs cross-list widely
+  LU: ['.DE','.L','.AS','.MI','.PA',''],
+};
+
+let ebFilters = { type: 'all', jurisdiction: 'all' };
+let ebResults = [];      // scored candidates currently shown
+let ebFailed = [];       // instruments without price data (mostly EU on free tier)
+let scanning = false;
+
+// ── persistence ──
+function symCache(){ try { return JSON.parse(localStorage.getItem('salt_ysym_cache')||'{}'); } catch(e){ return {}; } }
+function saveSymCache(c){ localStorage.setItem('salt_ysym_cache', JSON.stringify(c)); }
+
+// daily price cache (v2: stores {closes, volumes}, keyed by name — ISIN unreliable)
+function todayKey(){ return 'salt_eb2_'+new Date().toISOString().slice(0,10); }
+function quoteCache(){ try { return JSON.parse(localStorage.getItem(todayKey())||'{}'); } catch(e){ return {}; } }
+function saveQuoteCache(c){ localStorage.setItem(todayKey(), JSON.stringify(c)); }
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ── tab + filters ──
+function switchView(v){
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view===v));
+  document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id==='view-'+v));
+}
+
+document.querySelectorAll('#view-earlybird .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const f = chip.dataset.ebfilter, val = chip.dataset.value;
+    ebFilters[f] = val;
+    document.querySelectorAll(`#view-earlybird .chip[data-ebfilter="${f}"]`).forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    updateScanHint();
+  });
+});
+
+function ebSubset(){
+  return INSTRUMENTS.filter(i => {
+    if(ebFilters.type !== 'all' && i.type !== ebFilters.type) return false;
+    if(ebFilters.jurisdiction !== 'all' && i.jurisdiction !== ebFilters.jurisdiction) return false;
+    return true;
+  });
+}
+const SCAN_CAP = 40, POOL = 4;
+function updateScanHint(){
+  const n = ebSubset().length;
+  const cap = Math.min(n, SCAN_CAP);
+  document.getElementById('scanHint').textContent =
+    `${n} instrumente filtrate → se scanează primele ${cap} (${POOL} în paralel, ~${Math.max(5, Math.ceil(cap*1.2))}s prima dată, instant din cache).`;
+}
+
+// ── Symbol resolution via Twelve Data symbol_search ──
+// NOTE: the source list's ISIN column is misaligned (shifted) vs names, so ISIN is
+// NOT a reliable identity. We resolve by ISIN but VALIDATE the returned company name
+// against ours; on mismatch we fall back to searching by name. Cache keyed by name.
+
+function normName(s){
+  return String(s).toLowerCase()
+    .replace(/[.,&'"`/()-]/g, ' ')
+    .replace(/\b(inc|corp|corporation|company|co|ltd|limited|plc|ag|sa|as|nv|spa|se|oyj|asa|group|holding|holdings|the|class|cl|[abc]|adr|reg|registered)\b/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+function nameMatch(a, b){
+  a = normName(a); b = normName(b);
+  if(!a || !b) return false;
+  if(a === b) return true;
+  const ta = a.split(' ').filter(w => w.length > 2);
+  const tb = new Set(b.split(' ').filter(w => w.length > 2));
+  if(!ta.length) return false;
+  const overlap = ta.filter(w => tb.has(w)).length;
+  return overlap / ta.length >= 0.5; // at least half of significant tokens shared
+}
+function pickYahoo(quotes, juris, ourName){
+  if(!quotes || !quotes.length) return null;
+  const cand = quotes.filter(q => q.symbol && /EQUITY|ETF/i.test(q.quoteType || 'EQUITY'));
+  const named = cand.filter(q => nameMatch(ourName, q.shortname || q.longname || ''));
+  const pool = named.length ? named : cand;
+  if(!pool.length) return null;
+  const mk = q => ({ symbol: q.symbol, exch: q.exchDisp || q.exchange || '', name: q.shortname || q.longname || ourName, validated: named.length > 0 });
+  const sufs = JURIS_SUFFIX[juris] || [''];
+  for(const suf of sufs){
+    const hit = suf === ''
+      ? pool.find(q => !q.symbol.includes('.'))
+      : pool.find(q => q.symbol.toUpperCase().endsWith(suf));
+    if(hit) return mk(hit);
+  }
+  return mk(pool[0]);
+}
+// Strip hyphens and corporate-form suffixes so name search returns hits.
+function cleanQuery(name){
+  return String(name)
+    .replace(/[-\/]/g, ' ')
+    .replace(/\b(inc|corp|corporation|company|co|ltd|limited|plc|ag|sa|a\/s|as|nv|spa|se|oyj|asa|se|class\s+[abc]|cl\s+[abc]|adr|reg)\b\.?/gi, ' ')
+    .replace(/[.,]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+}
+async function yahooSearch(query){
+  const j = await proxiedJson(YH_SEARCH(query));
+  return (j && j.quotes) || [];
+}
+async function resolveSymbol(item){
+  const cache = symCache();
+  if(item.name in cache) return cache[item.name];
+  let result = null;
+
+  // 1) Yahoo search by ISIN — returns the listing with the correct exchange suffix.
+  //    ISIN column in the source PDF is misaligned, so accept only if the name matches.
+  if(item.isin){
+    const byIsin = await yahooSearch(item.isin);
+    result = pickYahoo(byIsin, item.jurisdiction, item.name);
+    if(result && !result.validated) result = null;
+  }
+
+  // 2) fall back to name search (cleaned first, then raw) and validate
+  if(!result){
+    const cq = cleanQuery(item.name) || item.name;
+    result = pickYahoo(await yahooSearch(cq), item.jurisdiction, item.name);
+    if((!result || !result.validated) && cq.toLowerCase() !== item.name.toLowerCase()){
+      const r2 = pickYahoo(await yahooSearch(item.name), item.jurisdiction, item.name);
+      if(r2 && r2.validated) result = r2;
+    }
+  }
+
+  cache[item.name] = result;
+  saveSymCache(cache);
+  return result;
+}
+
+// ── Yahoo Finance: 1y daily series (closes + volumes) ──
+async function fetchSeries(symbol){
+  const j = await proxiedJson(YH_CHART(symbol));
+  const r = j && j.chart && j.chart.result && j.chart.result[0];
+  const q = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
+  if(!r || !q || !q.close){
+    return { error: (j && j.chart && j.chart.error && j.chart.error.description) || 'fără date Yahoo' };
+  }
+  const closes = [], volumes = [];
+  for(let i = 0; i < q.close.length; i++){
+    if(q.close[i] == null) continue;
+    closes.push(q.close[i]);
+    volumes.push(q.volume && q.volume[i] != null ? q.volume[i] : 0);
+  }
+  if(closes.length < 8) return { error: 'prea puține bare' };
+  return { closes, volumes };
+}
+
+// ── indicators ──
+function rsi14(closes){
+  if(closes.length < 15) return 50;
+  let gain=0, loss=0;
+  for(let i=closes.length-14; i<closes.length; i++){
+    const d = closes[i]-closes[i-1];
+    if(d>=0) gain+=d; else loss-=d;
+  }
+  if(loss===0) return 100;
+  const rs = (gain/14)/(loss/14);
+  return 100 - 100/(1+rs);
+}
+function mean(a){ return a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0; }
+function indicators(closes, volumes){
+  const n = closes.length;
+  const last = closes[n-1], prev = closes[n-2];
+  const chg = prev ? (last-prev)/prev*100 : 0;
+  const c7 = closes[Math.max(0,n-8)], c3 = closes[Math.max(0,n-4)];
+  const w7 = c7 ? (last-c7)/c7*100 : 0;
+  const w3 = c3 ? (last-c3)/c3*100 : 0;
+  // 52-week range position (0 = at 52w low, 1 = at 52w high)
+  const hi = Math.max(...closes), lo = Math.min(...closes);
+  const pos = hi > lo ? (last-lo)/(hi-lo) : 0.5;
+  // volume confirmation: last session vs average of prior 20 sessions
+  let volRatio = 1;
+  if(volumes && volumes.length >= 21){
+    const prior = volumes.slice(-21, -1).filter(v => v > 0);
+    const avg = mean(prior);
+    if(avg > 0) volRatio = volumes[volumes.length-1] / avg;
+  }
+  return { chg, rsi: rsi14(closes.slice(-30)), w7, w3, last, hi, lo, pos, volRatio };
+}
+
+// ── scoring (adapted from nasdaq calcEarlyBuyScore, price-only) ──
+function calcEarlyBirdScore(m){
+  if(m.chg < -0.5) return 0; // pre-breakout requires a (near-)positive day
+  let s = 36;
+  if(m.chg>=0.3 && m.chg<=2)       s += 20;
+  else if(m.chg>2 && m.chg<=3.5)   s += 13;
+  else if(m.chg>3.5 && m.chg<=5.5) s += 6;
+  else if(m.chg>5.5)               s -= 10;
+
+  if(m.rsi>=42 && m.rsi<=58)       s += 16;
+  else if(m.rsi>=38 && m.rsi<42)   s += 9;
+  else if(m.rsi>58 && m.rsi<=63)   s += 7;
+  else if(m.rsi>63 && m.rsi<=70)   s -= 6;
+  else if(m.rsi>70)                s -= 15;
+  else if(m.rsi<38)                s += 4;
+
+  if(m.w7>=-8 && m.w7<=3 && m.w3>=1.5)   s += 22; // early reversal — best
+  else if(m.w7>3 && m.w7<=10 && m.w3>=1) s += 13; // confirmed incipient uptrend
+  else if(m.w7>10 && m.w3>=0)            s += 5;  // already trending (later)
+  else if(m.w7<-8)                       s -= 10; // active downtrend
+  else if(m.w3<-1 && m.w7<0)             s -= 8;
+
+  // volume confirmation — breakout needs participation
+  if(m.volRatio>=1.3 && m.volRatio<=3)   s += 8;
+  else if(m.volRatio>3)                  s += 3;  // spike could be exhaustion
+  else if(m.volRatio<0.7)                s -= 4;  // no conviction behind the move
+
+  // 52-week position — early bird wants the lower-middle of the range, not extended
+  if(m.pos>=0.15 && m.pos<=0.55)         s += 10;
+  else if(m.pos>0.55 && m.pos<=0.75)     s += 4;
+  else if(m.pos>0.9)                     s -= 8;  // hugging 52w high = late
+  else if(m.pos<0.1)                     s -= 4;  // basing very low / falling knife
+
+  return Math.max(0, Math.min(100, Math.round(s)));
+}
+function stageOf(m){
+  if(m.chg>=0.3 && m.chg<=2.5 && m.rsi>=42 && m.rsi<=60) return {cls:'eb-stage1', txt:'🌱 Early Stage'};
+  if(m.chg>2.5 || m.rsi>60) return {cls:'eb-stage2', txt:'🚀 Momentum Activ'};
+  return {cls:'eb-stage3', txt:'📈 Setup'};
+}
+
+// ── scan orchestrator (Yahoo, parallel pool) ──
+let ebAllScored = [];   // every analyzed instrument, sorted (for CSV + re-sort)
+async function startEarlyScan(){
+  if(scanning) return;
+  const subset = ebSubset().slice(0, SCAN_CAP);
+  if(!subset.length){ alert('Niciun instrument în filtrul curent.'); return; }
+
+  scanning = true;
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true; btn.textContent = '⏳ Se scanează...';
+  document.getElementById('aiCompareBtn').disabled = true;
+  document.getElementById('csvBtn').disabled = true;
+  document.getElementById('aiResult').classList.remove('active');
+  const pw = document.getElementById('progressWrap'); pw.classList.add('active');
+  setProgress(0, 'Pornesc scanarea...');
+
+  const qc = quoteCache();
+  const scored = [];
+  const failed = [];
+  let done = 0;
+
+  const curTop = arr => arr.filter(x => x.score >= 50).sort((a,b) => b.score - a.score);
+
+  async function work(item){
+    const r = await resolveSymbol(item);
+    if(!r){ failed.push({...item, reason:'simbol negăsit'}); return; }
+
+    // daily series cached per day, keyed by name (ISIN unreliable)
+    let data = qc[item.name];
+    if(!data || !data.closes){
+      const out = await fetchSeries(r.symbol);
+      if(out.error){ failed.push({...item, reason:out.error, ticker:r.symbol}); return; }
+      data = { closes: out.closes, volumes: out.volumes };
+      qc[item.name] = data; saveQuoteCache(qc);
+    }
+    const m = indicators(data.closes, data.volumes);
+    const score = calcEarlyBirdScore(m);
+    scored.push({ ...item, ticker:r.symbol, exch:r.exch, m, score, closes:data.closes });
+  }
+
+  // concurrency pool — POOL runners drain a shared queue
+  const queue = subset.slice();
+  async function runner(){
+    while(queue.length){
+      const item = queue.shift();
+      setProgress(done/subset.length*100, `${item.name}…`);
+      try { await work(item); } catch(e){ failed.push({...item, reason:'eroare: '+(e&&e.message||e)}); }
+      done++;
+      setProgress(done/subset.length*100, `${done}/${subset.length} analizate`);
+      ebAllScored = scored.slice().sort((a,b)=>b.score-a.score);
+      renderEarlyBird(curTop(scored), scored, failed);
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(POOL, subset.length)}, runner));
+
+  ebAllScored = scored.slice().sort((a,b)=>b.score-a.score);
+  ebResults = curTop(scored);
+  ebFailed = failed;
+  renderEarlyBird(ebResults, scored, failed);
+
+  pw.classList.remove('active');
+  btn.disabled = false; btn.textContent = '⚡ Scanează momentum';
+  document.getElementById('aiCompareBtn').disabled = (ebResults.length === 0 && ebFailed.length === 0);
+  document.getElementById('csvBtn').disabled = (scored.length === 0);
+  scanning = false;
+}
+
+// ── re-sort current candidates by chosen metric ──
+function resortEarly(){
+  if(!ebAllScored.length) return;
+  const key = document.getElementById('ebSort').value;
+  const val = x => key==='score' ? x.score : key==='vol' ? (x.m.volRatio||0) : (x.m[key]!=null ? x.m[key] : 0);
+  const sorted = ebAllScored.slice().sort((a,b) => val(b) - val(a));
+  renderEarlyBird(sorted.filter(x => x.score >= 50), ebAllScored, ebFailed);
+}
+
+// ── export all analyzed instruments to CSV ──
+function exportEarlyCsv(){
+  if(!ebAllScored.length){ alert('Rulează întâi o scanare.'); return; }
+  const head = ['Nume','Ticker','Bursa','Tara','Tip','Scor','Zi%','RSI','3z%','7z%','Vol_x_medie','Poz_52w_%','Ultim'];
+  const rows = ebAllScored.map(x => [
+    x.name, x.ticker||'', x.exch||'', x.jurisdiction, x.type, x.score,
+    x.m.chg.toFixed(2), x.m.rsi.toFixed(0), x.m.w3.toFixed(1), x.m.w7.toFixed(1),
+    (x.m.volRatio||0).toFixed(2), (x.m.pos*100).toFixed(0), x.m.last
+  ]);
+  const csv = [head, ...rows].map(r => r.map(c => {
+    const s = String(c).replace(/"/g,'""');
+    return /[",\n;]/.test(s) ? `"${s}"` : s;
+  }).join(';')).join('\r\n');
+  const blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `salt_earlybird_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('✅ CSV exportat');
+}
+function setProgress(pct, label){
+  document.getElementById('progressFill').style.width = pct.toFixed(0)+'%';
+  document.getElementById('progressPct').textContent = pct.toFixed(0)+'%';
+  if(label) document.getElementById('progressText').textContent = label;
+}
+
+// ── render ──
+function sparkline(closes){
+  if(!closes || closes.length<2) return '';
+  const w=100, h=36, min=Math.min(...closes), max=Math.max(...closes), rng=(max-min)||1;
+  const pts = closes.map((c,i) => `${(i/(closes.length-1)*w).toFixed(1)},${(h-((c-min)/rng)*h).toFixed(1)}`).join(' ');
+  const up = closes[closes.length-1] >= closes[0];
+  const col = up ? 'var(--green)' : 'var(--accent)';
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5"/></svg>`;
+}
+function renderEarlyBird(top, all, failed, aborted){
+  const c = document.getElementById('ebContainer');
+  document.getElementById('ebCount').textContent = top.length;
+  document.getElementById('ebSummary').textContent =
+    `${all.length} analizate · ${failed.length} fără date`;
+
+  const banner = '';
+
+  if(!top.length){
+    c.innerHTML = banner
+      + `<div class="empty-state">Niciun setup Early Bird (scor ≥ 50) deocamdată.</div>`
+      + failedHtml(failed);
+    return;
+  }
+  c.innerHTML = banner + '<div class="eb-grid">' + top.map((x,idx) => {
+    const st = stageOf(x.m);
+    return `<div class="eb-card ${idx===0?'top-pick':''}">
+      <div class="eb-stripe"></div>
+      <div class="eb-body">
+        <div class="eb-head">
+          <div>
+            <div class="eb-name">${escapeHtml(x.name)}</div>
+            <div class="eb-meta">${escapeHtml(x.ticker)}${x.exch?(' · '+escapeHtml(x.exch)):''} · ${escapeHtml(x.jurisdiction)}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="eb-score">${x.score}</div>
+            <div class="eb-score-lbl">scor</div>
+          </div>
+        </div>
+        <span class="eb-badge ${st.cls}">${st.txt}</span>
+        <div class="eb-spark">${sparkline(x.closes.slice(-14))}</div>
+        <div class="eb-metrics">
+          <div class="eb-metric"><div class="eb-metric-lbl">Zi</div><div class="eb-metric-val" style="color:${x.m.chg>=0?'var(--green)':'var(--accent)'}">${x.m.chg>=0?'+':''}${x.m.chg.toFixed(2)}%</div></div>
+          <div class="eb-metric"><div class="eb-metric-lbl">RSI</div><div class="eb-metric-val">${x.m.rsi.toFixed(0)}</div></div>
+          <div class="eb-metric"><div class="eb-metric-lbl">3z/7z</div><div class="eb-metric-val">${x.m.w3>=0?'+':''}${x.m.w3.toFixed(1)}/${x.m.w7>=0?'+':''}${x.m.w7.toFixed(1)}</div></div>
+          <div class="eb-metric"><div class="eb-metric-lbl">Volum</div><div class="eb-metric-val" style="color:${x.m.volRatio>=1.3?'var(--green)':'var(--text)'}">${(x.m.volRatio||0).toFixed(1)}×</div></div>
+          <div class="eb-metric"><div class="eb-metric-lbl">Poz 52s</div><div class="eb-metric-val">${(x.m.pos*100).toFixed(0)}%</div></div>
+        </div>
+        <div class="eb-links">
+          <a class="eb-link" href="https://finance.yahoo.com/quote/${encodeURIComponent(x.ticker)}" target="_blank">📈 Yahoo</a>
+          <a class="eb-link" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(x.ticker)}" target="_blank">📊 TV</a>
+          <a class="eb-link" href="https://app.trading212.com/" target="_blank">T212</a>
+        </div>
+      </div>
+    </div>`;
+  }).join('') + '</div>' + failedHtml(failed);
+}
+function failedHtml(failed){
+  if(!failed.length) return '';
+  // Group by error reason so the cause (plan coverage vs symbol not found) is visible.
+  const groups = {};
+  failed.forEach(f => {
+    const key = (f.reason || 'necunoscut').toString().slice(0, 100);
+    (groups[key] = groups[key] || []).push(f);
+  });
+  const blocks = Object.entries(groups).sort((a,b) => b[1].length - a[1].length).map(([reason, items]) => {
+    const sample = items.slice(0, 12).map(f => escapeHtml(f.name) + (f.jurisdiction ? ` [${f.jurisdiction}]` : '')).join(' · ');
+    return `<div style="margin-top:8px"><strong>${items.length}×</strong> — ${escapeHtml(reason)}<br>${sample}${items.length>12?` … +${items.length-12}`:''}</div>`;
+  }).join('');
+  return `<div class="eb-failed"><strong>${failed.length} fără date de preț</strong> (grupate după motiv):`
+    + blocks
+    + `<div style="margin-top:8px">Pentru acestea folosește „Compară cu AI" — Claude le poate evalua calitativ.</div></div>`;
+}
+
+// ── AI comparison (clipboard → claude.ai) ──
+function aiCompareEarly(){
+  const box = document.getElementById('aiResult');
+  box.classList.add('active');
+  const top = ebResults.slice(0, 8);
+  // EU / no-data instruments get evaluated qualitatively by Claude (no live momentum).
+  const noData = ebFailed.filter(f => f.reason !== 'simbol negăsit').slice(0, 25);
+  if(!top.length && !noData.length){ box.innerHTML = 'Rulează întâi o scanare.'; return; }
+
+  const sections = [];
+  let task = '';
+
+  if(top.length){
+    const lines = top.map(x =>
+      `${x.name} (${x.ticker}, ${x.jurisdiction}): scor ${x.score}, zi ${x.m.chg>=0?'+':''}${x.m.chg.toFixed(1)}%, RSI ${x.m.rsi.toFixed(0)}, 3z ${x.m.w3.toFixed(1)}% / 7z ${x.m.w7.toFixed(1)}%, volum ${(x.m.volRatio||0).toFixed(1)}× medie, poziție ${(x.m.pos*100).toFixed(0)}% în range-ul 52s`
+    ).join('\n');
+    sections.push(`A) CU DATE LIVE (pre-breakout momentum: zi pozitivă mică, RSI neutru, accelerare 3z vs 7z):\n${lines}`);
+  }
+  if(noData.length){
+    const lines = noData.map(f => `${f.name} (${f.jurisdiction})`).join('\n');
+    sections.push(`B) FĂRĂ DATE LIVE (instrumente EU pe care scanner-ul nu le-a putut prețui — evaluează-le din cunoștințele tale):\n${lines}`);
+  }
+
+  if(top.length && noData.length){
+    task = `Ești analist de piață. Am două grupuri de instrumente. Pentru grupul A (cu date live), compară-le și spune care 2-3 au cel mai bun setup early-bird ACUM. Pentru grupul B (fără date), spune care arată ca potențiale early-bird / pre-breakout pe baza cunoștințelor tale recente. Răspunde în română. Pentru fiecare recomandare: catalizator probabil, nivel de risc, și ce ai urmări înainte de intrare. Max 350 de cuvinte.`;
+  } else if(top.length){
+    task = `Ești analist de piață. Mai jos sunt instrumente detectate ca "pre-breakout momentum". Compară-le cap la cap și spune care 2-3 au cel mai bun setup early-bird ACUM și de ce. Pentru fiecare: catalizator probabil, nivel de risc, ce ai urmări înainte de intrare. În română, max 250 de cuvinte.`;
+  } else {
+    task = `Ești analist de piață. Mai jos sunt instrumente EU pentru care nu am date live. Pe baza cunoștințelor tale recente, spune care arată ca potențiale early-bird / pre-breakout (companii la început de trend, sub-radar, cu catalizator). În română, ordonează-le și pentru fiecare dă: motivul, nivelul de risc, ce ai urmări. Max 300 de cuvinte.`;
+  }
+
+  const prompt = `${task}\n\n${sections.join('\n\n')}`;
+
+  const ta = document.createElement('textarea');
+  ta.value = prompt; ta.style.cssText = 'position:fixed;left:-9999px;opacity:0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  let ok=false; try { ok = document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+
+  if(ok){
+    box.innerHTML = `<strong style="color:var(--green)">✓ Prompt copiat!</strong> Se deschide <a href="https://claude.ai/new" target="_blank">Claude.ai</a> — lipește (Ctrl+V) și trimite.`;
+    setTimeout(() => window.open('https://claude.ai/new','_blank'), 700);
+  } else {
+    box.innerHTML = `Copiază manual promptul:<textarea readonly>${escapeHtml(prompt)}</textarea>`;
+  }
+}
+
+updateScanHint();
+
+// ── toast ──
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if(!t){ t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ── PWA: inline manifest + install prompt ──
+(function(){
+  const icon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a0a0a'/%3E%3Ctext y='70' x='50' text-anchor='middle' font-size='58'%3E%F0%9F%8C%B1%3C/text%3E%3C/svg%3E";
+  const mf = {
+    name: 'Salt Bank — Instrumente', short_name: 'Salt Instrumente',
+    start_url: location.href.split('?')[0],
+    display: 'standalone', background_color: '#0a0a0a', theme_color: '#0a0a0a',
+    icons: [
+      { src: icon, sizes: '192x192', type: 'image/svg+xml', purpose: 'any' },
+      { src: icon, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+    ]
+  };
+  const ml = document.createElement('link');
+  ml.rel = 'manifest';
+  ml.href = URL.createObjectURL(new Blob([JSON.stringify(mf)], { type: 'application/json' }));
+  document.head.appendChild(ml);
+
+  // Service worker (enables offline + Android install prompt) — needs HTTPS + sw.js
+  // present in the same folder. Fails silently when opened as a local file.
+  if('serviceWorker' in navigator && location.protocol !== 'file:'){
+    navigator.serviceWorker.register('sw-salt.js').catch(() => {});
+  }
+
+  let deferred = null;
+  const btn = document.getElementById('pwaInstallBtn');
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferred = e;
+    if(btn) btn.classList.add('show');
+  });
+  window.addEventListener('appinstalled', () => {
+    deferred = null;
+    if(btn) btn.classList.remove('show');
+    showToast('✅ Aplicație instalată!');
+  });
+
+  // iOS Safari has no beforeinstallprompt — show button to guide manual install
+  const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(isiOS && !standalone && btn) btn.classList.add('show');
+
+  window.installPWA = function(){
+    if(deferred){
+      deferred.prompt();
+      deferred.userChoice.then(() => { deferred = null; });
+    } else if(isiOS){
+      showToast('Pe iPhone: apasă Share (⬆️) → „Adaugă la ecran principal".');
+    } else if(location.protocol === 'file:'){
+      showToast('Pentru instalare deschide pagina prin HTTPS (ex: Netlify/GitHub Pages), nu din fișier local.');
+    } else {
+      showToast('Folosește meniul browserului → „Instalează / Adaugă la ecran principal".');
+    }
+  };
+})();
+
+// Initial render
+render();
+</script>
+</body>
+</html>
