@@ -652,6 +652,30 @@ td.isin {
 .ai-result.active { display: block; }
 .ai-result a { color: var(--accent); font-weight: 600; text-decoration: none; }
 .ai-result textarea { width: 100%; height: 120px; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 6px; padding: 8px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px; margin-top: 8px; }
+
+/* ── Top Losers / Watchlist shared ── */
+.btn-losers { background: #f87171 !important; border-color: #f87171 !important; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.seg-btn { background: var(--bg-card); border: none; color: var(--text-dim); padding: 10px 14px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px; transition: all 0.15s; }
+.seg-btn.active { background: var(--accent); color: #000; font-weight: 600; }
+.wl-add-btn { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; cursor: pointer; font-size: 13px; transition: all 0.15s; }
+.wl-add-btn:hover { border-color: var(--accent); }
+.wl-add-btn.added { border-color: var(--green); opacity: 0.5; }
+#losTable td, #wlTable td { font-family: 'DM Mono', monospace; font-size: 12px; }
+#losTable .neg, #wlTable .neg { color: var(--accent); }
+#losTable .pos, #wlTable .pos { color: var(--green); }
+.vol-hot { color: var(--accent); font-weight: 600; }
+.row-rev { box-shadow: inset 3px 0 0 var(--green); }
+.row-sel td { background: var(--accent-dim) !important; }
+.btn-row { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; cursor: pointer; font-size: 12px; }
+.btn-row:hover { border-color: var(--accent); }
+.cmp-bar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(30px); background: var(--bg-card); border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; display: none; gap: 12px; align-items: center; z-index: 900; box-shadow: 0 8px 28px #000a; font-family: 'DM Mono', monospace; font-size: 12px; }
+.cmp-bar.show { display: flex; }
+.cmp-bar .cmp-n { color: var(--accent); font-weight: 700; }
+.cmp-bar button { border: none; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 600; }
+.cmp-bar .cmp-go { background: var(--purple); color: #000; }
+.cmp-bar .cmp-clear { background: var(--bg-soft); color: var(--text-dim); border: 1px solid var(--border); }
+.wl-fav { color: var(--green); }
 </style>
 </head>
 <body>
@@ -702,6 +726,8 @@ td.isin {
   <div class="tabs">
     <button class="tab active" data-view="list" onclick="switchView('list')">📋 Listă completă</button>
     <button class="tab" data-view="earlybird" onclick="switchView('earlybird')">🌱 Early Bird</button>
+    <button class="tab" data-view="losers" onclick="switchView('losers')">🔻 Top Losers</button>
+    <button class="tab" data-view="watchlist" onclick="switchView('watchlist')">👁️ Watchlist <span id="wlTabCount" style="opacity:.6"></span></button>
   </div>
 
   <div class="view active" id="view-list">
@@ -755,6 +781,7 @@ td.isin {
           <th data-sort="type">Tip</th>
           <th data-sort="jurisdiction">Țară</th>
           <th data-sort="isin">ISIN</th>
+          <th style="cursor:default"></th>
         </tr>
       </thead>
       <tbody id="tbody"></tbody>
@@ -825,6 +852,132 @@ td.isin {
 
   </div><!-- /view-earlybird -->
 
+  <!-- ════════════ TOP LOSERS ════════════ -->
+  <div class="view" id="view-losers">
+
+    <div class="notice">
+      <strong>🔻 Top Losers.</strong> Scanează lista Salt filtrată (US + EU, prin Yahoo) și ordonează cele mai mari <strong>scăderi</strong>. Comutator între <strong>Δ pe zi</strong> și <strong>Δ pe 7 zile</strong> (dip-buying). Bifează 2+ rânduri → „🤖 Compară AI". <strong>🌱→ Reversal early</strong> marchează loserii care deja se întorc în sus și-i poate adăuga în watchlist.
+      <span class="warn">Atenție:</span> prin proxy CORS, deci doar pe HTTPS (nu file://).
+    </div>
+
+    <div class="filters">
+      <span class="filter-label">Tip:</span>
+      <div class="chip active" data-lfilter="type" data-value="all">Toate</div>
+      <div class="chip" data-lfilter="type" data-value="Common Stock">Acțiuni</div>
+      <div class="chip" data-lfilter="type" data-value="ETF">ETF</div>
+      <div class="chip" data-lfilter="type" data-value="ETP">ETP</div>
+    </div>
+    <div class="filters">
+      <span class="filter-label">Țară:</span>
+      <div class="chip active" data-lfilter="jurisdiction" data-value="all">Toate</div>
+      <div class="chip" data-lfilter="jurisdiction" data-value="US">🇺🇸 US</div>
+      <div class="chip" data-lfilter="jurisdiction" data-value="DE">🇩🇪 DE</div>
+      <div class="chip" data-lfilter="jurisdiction" data-value="IE">🇮🇪 IE</div>
+      <div class="chip" data-lfilter="jurisdiction" data-value="FR">🇫🇷 FR</div>
+      <div class="chip" data-lfilter="jurisdiction" data-value="NL">🇳🇱 NL</div>
+      <div class="chip" data-lfilter="jurisdiction" data-value="GB">🇬🇧 GB</div>
+      <div class="chip" data-lfilter="jurisdiction" data-value="IT">🇮🇹 IT</div>
+      <div class="chip" data-lfilter="jurisdiction" data-value="ES">🇪🇸 ES</div>
+      <div class="chip" data-lfilter="jurisdiction" data-value="CH">🇨🇭 CH</div>
+    </div>
+
+    <div class="scan-controls">
+      <div class="seg" id="losMode">
+        <button class="seg-btn active" data-mode="day" onclick="losSetMode('day')">Δ Zi</button>
+        <button class="seg-btn" data-mode="w7" onclick="losSetMode('w7')">Δ 7 zile</button>
+      </div>
+      <label class="scan-hint" style="display:flex;gap:6px;align-items:center">Scădere min:
+        <input type="number" id="losMinDrop" value="2" min="0" step="0.5" style="width:64px;background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-family:'DM Mono',monospace;font-size:11px">%
+      </label>
+      <button class="scan-btn btn-losers" id="losScanBtn" onclick="startLoserScan()">🔻 Scanează losers</button>
+      <button class="ai-btn" id="losReversalBtn" onclick="losReversalEarly()" disabled style="border-color:var(--green);color:var(--green)">🌱→ Reversal early</button>
+      <span class="scan-hint" id="losHint">Filtrează, apoi scanează.</span>
+    </div>
+
+    <div class="progress-wrap" id="losProgressWrap">
+      <div class="progress-label"><span id="losProgressText">Se scanează...</span><span id="losProgressPct">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="losProgressFill"></div></div>
+    </div>
+
+    <div class="ai-result" id="losAiResult"></div>
+
+    <div class="results-info">
+      <div>Losers: <span class="results-count" id="losCount">0</span></div>
+      <div id="losSummary"></div>
+    </div>
+
+    <div class="table-wrap" id="losTableWrap" style="display:none">
+      <table id="losTable">
+        <thead><tr>
+          <th style="cursor:default"><input type="checkbox" id="losCheckAll" onclick="losToggleAll(this.checked)" title="Selectează tot"></th>
+          <th>Nume</th><th>Ticker</th><th>Țară</th>
+          <th style="text-align:right">Δ Zi</th><th style="text-align:right">Δ 7z</th>
+          <th style="text-align:right">RSI</th><th style="text-align:right">Vol×</th>
+          <th style="text-align:right">52s</th><th></th>
+        </tr></thead>
+        <tbody id="losResults"></tbody>
+      </table>
+    </div>
+    <div id="losEmpty" class="empty-state">Apasă „Scanează losers" pentru a căuta scăderi în lista filtrată.</div>
+
+  </div><!-- /view-losers -->
+
+  <!-- ════════════ WATCHLIST ════════════ -->
+  <div class="view" id="view-watchlist">
+
+    <div class="notice">
+      <strong>👁️ Watchlist.</strong> Adaugă instrumente din orice tab (butonul 👁️) sau manual mai jos. Prețul și Δ zi se actualizează prin Yahoo. Filtrează pe gainers/losers/movers/early, bifează 2+ → „🤖 Compară AI" (ca la Earnings). Se salvează local în browser.
+    </div>
+
+    <div class="scan-controls">
+      <input type="text" id="wlInput" class="search-input" style="min-width:200px;flex:0 1 320px" placeholder="Adaugă: ticker (ex. RHM.DE) sau nume din listă..." onkeydown="if(event.key==='Enter')wlAddManual()">
+      <button class="scan-btn" onclick="wlAddManual()">+ Adaugă</button>
+      <button class="ai-btn" id="wlRefreshBtn" onclick="wlRefresh()">↻ Actualizează prețuri</button>
+      <button class="ai-btn" id="wlCompareBtn" onclick="wlCompareAi()" disabled style="border-color:var(--purple);color:var(--purple)">🧠 Compară AI</button>
+    </div>
+
+    <div class="filters">
+      <span class="filter-label">Filtru:</span>
+      <div class="chip active" data-wlfilter="all">Toate</div>
+      <div class="chip" data-wlfilter="gainers">📈 Gainers</div>
+      <div class="chip" data-wlfilter="losers">📉 Losers</div>
+      <div class="chip" data-wlfilter="movers">🔥 Movers</div>
+      <div class="chip" data-wlfilter="early">🌱 Early</div>
+    </div>
+
+    <div class="ai-result" id="wlAiResult"></div>
+
+    <div class="results-info">
+      <div>În watchlist: <span class="results-count" id="wlCount">0</span></div>
+      <div id="wlSummary"></div>
+    </div>
+
+    <div class="table-wrap" id="wlTableWrap" style="display:none">
+      <table id="wlTable">
+        <thead><tr>
+          <th style="cursor:default"><input type="checkbox" id="wlCheckAll" onclick="wlToggleAll(this.checked)" title="Selectează tot"></th>
+          <th>Nume</th><th>Ticker</th><th>Țară</th>
+          <th style="text-align:right">Preț</th><th style="text-align:right">Δ Zi</th>
+          <th style="text-align:right">Δ 7z</th><th style="text-align:right">RSI</th><th></th>
+        </tr></thead>
+        <tbody id="wlResults"></tbody>
+      </table>
+    </div>
+    <div id="wlEmpty" class="empty-state">Watchlist gol. Adaugă instrumente cu butonul 👁️ din celelalte tab-uri.</div>
+
+  </div><!-- /view-watchlist -->
+
+  <div class="cmp-bar" id="losCmpBar">
+    <span><span class="cmp-n" id="losCmpN">0</span> losers selectați</span>
+    <button class="cmp-go" onclick="losCompareAi()">🤖 Compară AI</button>
+    <button class="cmp-clear" onclick="losClearSel()">Curăță</button>
+  </div>
+  <div class="cmp-bar" id="wlCmpBar">
+    <span><span class="cmp-n" id="wlCmpN">0</span> din watchlist selectați</span>
+    <button class="cmp-go" onclick="wlCompareAi()">🤖 Compară AI</button>
+    <button class="cmp-clear" onclick="wlClearSel()">Curăță</button>
+  </div>
+
   <div class="footer">
     Generat din PDF-ul oficial Salt Bank · Update: 21.05.2026 · 532 instrumente
   </div>
@@ -868,7 +1021,7 @@ function render() {
 
   const tbody = document.getElementById('tbody');
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Niciun rezultat. Încearcă alt termen.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Niciun rezultat. Încearcă alt termen.</td></tr>';
   } else {
     tbody.innerHTML = filtered.map(item => `
       <tr>
@@ -876,6 +1029,7 @@ function render() {
         <td><span class="type-badge type-${item.type.replace(' ', '.')}">${escapeHtml(item.type)}</span></td>
         <td><span class="juris-badge">${escapeHtml(item.jurisdiction)}</span></td>
         <td class="isin">${escapeHtml(item.isin)}</td>
+        <td style="text-align:right"><button class="wl-add-btn" title="Adaugă în watchlist" onclick="wlAddByName('${encodeURIComponent(item.name)}')">👁️</button></td>
       </tr>
     `).join('');
   }
@@ -1002,6 +1156,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 function switchView(v){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view===v));
   document.querySelectorAll('.view').forEach(el => el.classList.toggle('active', el.id==='view-'+v));
+  if(v==='watchlist'){ wlRender(); wlRefresh(); }
+  if(v==='losers') updateLosHint();
 }
 
 document.querySelectorAll('#view-earlybird .chip').forEach(chip => {
@@ -1351,6 +1507,7 @@ function renderEarlyBird(top, all, failed, aborted){
           <a class="eb-link" href="https://finance.yahoo.com/quote/${encodeURIComponent(x.ticker)}" target="_blank">📈 Yahoo</a>
           <a class="eb-link" href="https://www.tradingview.com/chart/?symbol=${encodeURIComponent(x.ticker)}" target="_blank">📊 TV</a>
           <a class="eb-link" href="https://app.trading212.com/" target="_blank">T212</a>
+          <a class="eb-link" href="javascript:void(0)" onclick="wlAddByName('${encodeURIComponent(x.name)}')" title="Adaugă în watchlist">👁️</a>
         </div>
       </div>
     </div>`;
@@ -1421,6 +1578,350 @@ function aiCompareEarly(){
 }
 
 updateScanHint();
+
+// ═══════════════════════════════════════════════
+//  SHARED: metrics + copy-to-Claude
+// ═══════════════════════════════════════════════
+// item: Salt instrument {name,isin,type,jurisdiction} OR raw {raw:true, ticker}
+async function metricsFor(item){
+  let ticker, cacheKey;
+  if(item.raw){ ticker = item.ticker; cacheKey = 'tk:'+ticker; }
+  else {
+    const r = await resolveSymbol(item);
+    if(!r) return { error:'simbol negăsit' };
+    ticker = r.symbol; cacheKey = item.name;
+  }
+  const qc = quoteCache();
+  let data = qc[cacheKey];
+  if(!data || !data.closes){
+    const out = await fetchSeries(ticker);
+    if(out.error) return { error: out.error, ticker };
+    data = { closes: out.closes, volumes: out.volumes };
+    qc[cacheKey] = data; saveQuoteCache(qc);
+  }
+  return { ticker, m: indicators(data.closes, data.volumes), closes: data.closes };
+}
+function copyToClaude(prompt, boxId){
+  const box = document.getElementById(boxId);
+  box.classList.add('active');
+  const ta = document.createElement('textarea');
+  ta.value = prompt; ta.style.cssText = 'position:fixed;left:-9999px;opacity:0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  let ok=false; try { ok = document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  if(ok){
+    box.innerHTML = `<strong style="color:var(--green)">✓ Prompt copiat!</strong> Se deschide <a href="https://claude.ai/new" target="_blank">Claude.ai</a> — lipește (Ctrl+V) și trimite.`;
+    setTimeout(() => window.open('https://claude.ai/new','_blank'), 700);
+  } else {
+    box.innerHTML = `Copiază manual promptul:<textarea readonly>${escapeHtml(prompt)}</textarea>`;
+  }
+}
+function metricLine(x){
+  return `${x.name} (${x.ticker}, ${x.jurisdiction}): zi ${x.m.chg>=0?'+':''}${x.m.chg.toFixed(1)}%, 7z ${x.m.w7>=0?'+':''}${x.m.w7.toFixed(1)}%, 3z ${x.m.w3>=0?'+':''}${x.m.w3.toFixed(1)}%, RSI ${x.m.rsi.toFixed(0)}, vol ${(x.m.volRatio||0).toFixed(1)}×, poziție 52s ${(x.m.pos*100).toFixed(0)}%`;
+}
+
+// ═══════════════════════════════════════════════
+//  TOP LOSERS
+// ═══════════════════════════════════════════════
+let losFilters = { type:'all', jurisdiction:'all' };
+let losMode = 'day';            // 'day' = Δ zi, 'w7' = Δ 7 zile
+let losResults = [];
+let losSelected = new Set();
+let losScanning = false;
+
+document.querySelectorAll('#view-losers .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const f = chip.dataset.lfilter, val = chip.dataset.value;
+    losFilters[f] = val;
+    document.querySelectorAll(`#view-losers .chip[data-lfilter="${f}"]`).forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    updateLosHint();
+  });
+});
+function losSubset(){
+  return INSTRUMENTS.filter(i => {
+    if(losFilters.type !== 'all' && i.type !== losFilters.type) return false;
+    if(losFilters.jurisdiction !== 'all' && i.jurisdiction !== losFilters.jurisdiction) return false;
+    return true;
+  });
+}
+function updateLosHint(){
+  const n = losSubset().length, cap = Math.min(n, SCAN_CAP);
+  document.getElementById('losHint').textContent = `${n} filtrate → scanez primele ${cap}.`;
+}
+function losSetMode(m){
+  losMode = m;
+  document.querySelectorAll('#losMode .seg-btn').forEach(b => b.classList.toggle('active', b.dataset.mode===m));
+  if(losResults.length) renderLosers();
+}
+function losDrop(x){ return losMode==='day' ? x.m.chg : x.m.w7; }   // negative = drop
+function isReversal(m){ return m.w3 > 0 && m.w7 < 0; }
+
+async function startLoserScan(){
+  if(losScanning) return;
+  const subset = losSubset().slice(0, SCAN_CAP);
+  if(!subset.length){ alert('Niciun instrument în filtrul curent.'); return; }
+  const minDrop = parseFloat(document.getElementById('losMinDrop').value) || 0;
+
+  losScanning = true;
+  const btn = document.getElementById('losScanBtn');
+  btn.disabled = true; btn.textContent = '⏳ Scanez...';
+  document.getElementById('losReversalBtn').disabled = true;
+  document.getElementById('losAiResult').classList.remove('active');
+  const pw = document.getElementById('losProgressWrap'); pw.classList.add('active');
+  losSetProgress(0, 'Pornesc...');
+
+  const found = [];
+  let done = 0, failed = 0;
+  const queue = subset.slice();
+  async function runner(){
+    while(queue.length){
+      const item = queue.shift();
+      losSetProgress(done/subset.length*100, `${item.name}…`);
+      try {
+        const res = await metricsFor(item);
+        if(res.error){ failed++; }
+        else found.push({ ...item, ticker:res.ticker, m:res.m, closes:res.closes });
+      } catch(e){ failed++; }
+      done++;
+      losSetProgress(done/subset.length*100, `${done}/${subset.length}`);
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(POOL, subset.length)}, runner));
+
+  // keep only those dropping by at least minDrop on the chosen horizon
+  losResults = found.filter(x => losDrop(x) <= -minDrop);
+  losFailedCount = failed;
+  renderLosers();
+
+  pw.classList.remove('active');
+  btn.disabled = false; btn.textContent = '🔻 Scanează losers';
+  document.getElementById('losReversalBtn').disabled = (losResults.length === 0);
+  losScanning = false;
+}
+let losFailedCount = 0;
+function losSetProgress(pct, label){
+  document.getElementById('losProgressFill').style.width = pct.toFixed(0)+'%';
+  document.getElementById('losProgressPct').textContent = pct.toFixed(0)+'%';
+  if(label) document.getElementById('losProgressText').textContent = label;
+}
+function renderLosers(){
+  const sorted = losResults.slice().sort((a,b) => losDrop(a) - losDrop(b)); // most negative first
+  const tbody = document.getElementById('losResults');
+  document.getElementById('losCount').textContent = sorted.length;
+  document.getElementById('losSummary').textContent =
+    `mod: ${losMode==='day'?'Δ zi':'Δ 7z'} · ${losFailedCount} fără date`;
+  const wrap = document.getElementById('losTableWrap'), empty = document.getElementById('losEmpty');
+  if(!sorted.length){ wrap.style.display='none'; empty.style.display='block'; empty.textContent='Niciun loser care îndeplinește pragul.'; losUpdateCmpBar(); return; }
+  wrap.style.display=''; empty.style.display='none';
+  tbody.innerHTML = sorted.map(x => {
+    const sel = losSelected.has(x.ticker);
+    const rev = isReversal(x.m);
+    return `<tr class="${sel?'row-sel':''} ${rev?'row-rev':''}">
+      <td><input type="checkbox" ${sel?'checked':''} onclick="losToggleSel('${x.ticker}')"></td>
+      <td class="name">${escapeHtml(x.name)}${rev?' <span title="se întoarce în sus" class="wl-fav">🌱</span>':''}</td>
+      <td>${escapeHtml(x.ticker)}</td>
+      <td>${escapeHtml(x.jurisdiction)}</td>
+      <td style="text-align:right" class="${x.m.chg>=0?'pos':'neg'}">${x.m.chg>=0?'+':''}${x.m.chg.toFixed(2)}%</td>
+      <td style="text-align:right" class="${x.m.w7>=0?'pos':'neg'}">${x.m.w7>=0?'+':''}${x.m.w7.toFixed(1)}%</td>
+      <td style="text-align:right">${x.m.rsi.toFixed(0)}</td>
+      <td style="text-align:right" class="${x.m.volRatio>=2?'vol-hot':''}">${(x.m.volRatio||0).toFixed(1)}×</td>
+      <td style="text-align:right">${(x.m.pos*100).toFixed(0)}%</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn-row" title="Adaugă în watchlist" onclick="wlAddByName('${encodeURIComponent(x.name)}')">👁️</button>
+        <a class="btn-row" href="https://finance.yahoo.com/quote/${encodeURIComponent(x.ticker)}" target="_blank" style="text-decoration:none">📈</a>
+      </td>
+    </tr>`;
+  }).join('');
+  losUpdateCmpBar();
+}
+function losToggleSel(t){
+  if(losSelected.has(t)) losSelected.delete(t); else losSelected.add(t);
+  renderLosers();
+}
+function losToggleAll(checked){
+  const sorted = losResults.slice();
+  if(checked) sorted.forEach(x => losSelected.add(x.ticker));
+  else losSelected.clear();
+  renderLosers();
+}
+function losClearSel(){ losSelected.clear(); document.getElementById('losCheckAll').checked=false; renderLosers(); }
+function losUpdateCmpBar(){
+  const n = losSelected.size;
+  document.getElementById('losCmpN').textContent = n;
+  document.getElementById('losCmpBar').classList.toggle('show', n >= 2);
+}
+function losReversalEarly(){
+  const revs = losResults.filter(x => isReversal(x.m));
+  if(!revs.length){ showToast('🌱 Niciun reversal early printre loseri acum'); return; }
+  let added = 0;
+  revs.forEach(x => { if(wlAddInstrument(x, true)) added++; });
+  wlSave(); wlRender(); wlRefresh();
+  showToast(`🌱 ${revs.length} reversal early · ${added} adăugați în watchlist`);
+}
+function losCompareAi(){
+  const sel = losResults.filter(x => losSelected.has(x.ticker));
+  if(sel.length < 2){ showToast('Bifează cel puțin 2 losers'); return; }
+  const lines = sel.sort((a,b)=>losDrop(a)-losDrop(b)).map(metricLine).join('\n');
+  const revNote = sel.some(x=>isReversal(x.m)) ? ' Marchează care arată semn de revenire (3z pozitiv în timp ce 7z încă negativ).' : '';
+  const prompt = `Ești analist de piață. Mai jos sunt acțiuni/ETF-uri în scădere (top losers).${revNote} Spune care 2-3 par cele mai bune oportunități de rebound / dip-buying ACUM și care sunt „falling knife" de evitat. Pentru fiecare: motiv probabil al scăderii, nivel de risc, ce ai urmări înainte de intrare. În română, max 300 de cuvinte.\n\n${lines}`;
+  copyToClaude(prompt, 'losAiResult');
+}
+
+// ═══════════════════════════════════════════════
+//  WATCHLIST
+// ═══════════════════════════════════════════════
+const WL_KEY = 'salt_watchlist';
+let watchlist = [];
+try { watchlist = JSON.parse(localStorage.getItem(WL_KEY) || '[]'); } catch(e){ watchlist = []; }
+let wlData = {};          // key → {ticker, m}
+let wlSelected = new Set();
+let wlFilter = 'all';
+
+function wlSave(){ localStorage.setItem(WL_KEY, JSON.stringify(watchlist)); }
+function wlHas(key){ return watchlist.some(w => w.key === key); }
+// add a Salt instrument; returns true if newly added. silent skips toast.
+function wlAddInstrument(item, silent){
+  const key = item.name;
+  if(wlHas(key)){ if(!silent) showToast('👁️ ' + item.name + ' deja în watchlist'); return false; }
+  watchlist.push({ key, name:item.name, isin:item.isin, type:item.type, jurisdiction:item.jurisdiction, ticker:item.ticker||null });
+  if(!silent){ wlSave(); wlRender(); wlRefresh(); showToast('👁️ Adăugat: ' + item.name); }
+  return true;
+}
+function wlAddByName(enc){
+  const name = decodeURIComponent(enc);
+  const item = INSTRUMENTS.find(i => i.name === name);
+  if(item) wlAddInstrument(item);
+}
+function wlAddManual(){
+  const inp = document.getElementById('wlInput');
+  const q = (inp.value||'').trim();
+  if(!q) return;
+  let item = INSTRUMENTS.find(i => i.name.toLowerCase()===q.toLowerCase() || i.isin.toLowerCase()===q.toLowerCase());
+  if(!item) item = INSTRUMENTS.find(i => i.name.toLowerCase().includes(q.toLowerCase()));
+  if(item){ wlAddInstrument(item); }
+  else {
+    const t = q.toUpperCase();
+    const key = 'tk:'+t;
+    if(wlHas(key)){ showToast('👁️ ' + t + ' deja în watchlist'); }
+    else {
+      watchlist.push({ key, name:t, ticker:t, raw:true, jurisdiction:'—', type:'—', isin:'' });
+      wlSave(); wlRender(); wlRefresh(); showToast('👁️ Adăugat ticker: ' + t);
+    }
+  }
+  inp.value = '';
+}
+function wlRemove(key){
+  watchlist = watchlist.filter(w => w.key !== key);
+  wlSelected.delete(key); delete wlData[key];
+  wlSave(); wlRender();
+}
+document.querySelectorAll('#view-watchlist .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    wlFilter = chip.dataset.wlfilter;
+    document.querySelectorAll('#view-watchlist .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    wlRender();
+  });
+});
+function wlPass(key){
+  const d = wlData[key]; if(!d) return wlFilter === 'all';
+  const m = d.m;
+  if(wlFilter==='gainers') return m.chg > 0;
+  if(wlFilter==='losers')  return m.chg < 0;
+  if(wlFilter==='movers')  return Math.abs(m.chg) >= 3;
+  if(wlFilter==='early')   return isReversal(m) || (m.chg>=0.3 && m.chg<=2.5 && m.rsi>=42 && m.rsi<=60);
+  return true;
+}
+function updateWlCount(){
+  document.getElementById('wlTabCount').textContent = watchlist.length ? `(${watchlist.length})` : '';
+}
+function wlRender(){
+  updateWlCount();
+  const rows = watchlist.filter(w => wlPass(w.key));
+  document.getElementById('wlCount').textContent = watchlist.length;
+  document.getElementById('wlSummary').textContent = wlFilter==='all' ? '' : `filtru: ${wlFilter} · ${rows.length} afișate`;
+  const wrap = document.getElementById('wlTableWrap'), empty = document.getElementById('wlEmpty');
+  if(!watchlist.length){ wrap.style.display='none'; empty.style.display='block'; wlUpdateCmpBar(); return; }
+  wrap.style.display=''; empty.style.display='none';
+  const tbody = document.getElementById('wlResults');
+  tbody.innerHTML = rows.map(w => {
+    const d = wlData[w.key], m = d && d.m;
+    const sel = wlSelected.has(w.key);
+    const rev = m && isReversal(m);
+    const kq = w.key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const cell = (v, cls) => m ? `<td style="text-align:right" class="${cls||''}">${v}</td>` : `<td style="text-align:right;color:var(--text-faint)">–</td>`;
+    return `<tr class="${sel?'row-sel':''} ${rev?'row-rev':''}">
+      <td><input type="checkbox" ${sel?'checked':''} onclick="wlToggleSel('${kq}')"></td>
+      <td class="name">${escapeHtml(w.name)}${rev?' <span class="wl-fav">🌱</span>':''}</td>
+      <td>${escapeHtml(w.ticker||'—')}</td>
+      <td>${escapeHtml(w.jurisdiction||'—')}</td>
+      ${cell(m?('$'+m.last.toFixed(2)):'')}
+      ${cell(m?((m.chg>=0?'+':'')+m.chg.toFixed(2)+'%'):'', m?(m.chg>=0?'pos':'neg'):'')}
+      ${cell(m?((m.w7>=0?'+':'')+m.w7.toFixed(1)+'%'):'', m?(m.w7>=0?'pos':'neg'):'')}
+      ${cell(m?m.rsi.toFixed(0):'')}
+      <td style="text-align:right"><button class="btn-row" title="Scoate din watchlist" onclick="wlRemove('${kq}')">✕</button></td>
+    </tr>`;
+  }).join('');
+  wlUpdateCmpBar();
+}
+let wlRefreshing = false;
+async function wlRefresh(force){
+  if(wlRefreshing) return;
+  if(!watchlist.length) return;
+  wlRefreshing = true;
+  const btn = document.getElementById('wlRefreshBtn');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ ...'; }
+  const queue = watchlist.filter(w => force || !wlData[w.key]).slice();
+  async function runner(){
+    while(queue.length){
+      const w = queue.shift();
+      try {
+        const res = await metricsFor(w.raw ? {raw:true, ticker:w.ticker} : w);
+        if(!res.error){
+          if(!w.ticker){ w.ticker = res.ticker; wlSave(); }
+          wlData[w.key] = { ticker: res.ticker, m: res.m };
+          wlRender();
+        }
+      } catch(e){}
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(POOL, queue.length||1)}, runner));
+  if(btn){ btn.disabled = false; btn.textContent = '↻ Actualizează prețuri'; }
+  wlRefreshing = false;
+  wlRender();
+}
+function wlToggleSel(key){
+  if(wlSelected.has(key)) wlSelected.delete(key); else wlSelected.add(key);
+  wlRender();
+}
+function wlToggleAll(checked){
+  if(checked) watchlist.filter(w=>wlPass(w.key)).forEach(w => wlSelected.add(w.key));
+  else wlSelected.clear();
+  wlRender();
+}
+function wlClearSel(){ wlSelected.clear(); const c=document.getElementById('wlCheckAll'); if(c)c.checked=false; wlRender(); }
+function wlUpdateCmpBar(){
+  const n = wlSelected.size;
+  document.getElementById('wlCmpN').textContent = n;
+  document.getElementById('wlCmpBar').classList.toggle('show', n >= 2);
+  document.getElementById('wlCompareBtn').disabled = (watchlist.length === 0);
+}
+function wlCompareAi(){
+  let pick = watchlist.filter(w => wlSelected.has(w.key));
+  if(pick.length < 2) pick = watchlist.slice();   // none selected → compare all
+  const withData = pick.filter(w => wlData[w.key]).map(w => ({ name:w.name, ticker:w.ticker, jurisdiction:w.jurisdiction, m:wlData[w.key].m }));
+  const noData = pick.filter(w => !wlData[w.key]).map(w => `${w.name} (${w.jurisdiction})`);
+  if(!withData.length && !noData.length){ showToast('Watchlist gol'); return; }
+  const sections = [];
+  if(withData.length) sections.push('CU DATE LIVE:\n' + withData.map(metricLine).join('\n'));
+  if(noData.length)   sections.push('FĂRĂ DATE (apasă „Actualizează prețuri"):\n' + noData.join('\n'));
+  const prompt = `Ești analist de piață. Mai jos e watchlist-ul meu. Compară instrumentele și spune care 2-3 au cel mai bun raport risc/recompensă ACUM și de ce. Pentru fiecare: setup tehnic (entry/stop/target orientativ), catalizator probabil, nivel de risc. În română, max 350 de cuvinte.\n\n${sections.join('\n\n')}`;
+  copyToClaude(prompt, 'wlAiResult');
+}
+
+updateLosHint();
+updateWlCount();
 
 // ── toast ──
 function showToast(msg){
