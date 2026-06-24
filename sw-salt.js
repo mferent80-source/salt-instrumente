@@ -1,6 +1,6 @@
 // Service Worker — Salt Bank Instrumente (offline + install PWA)
 // Strategie: network-first cu fallback la cache. Bump CACHE_VERSION la fiecare release.
-const CACHE_VERSION = 'salt-v5-2026-06-24';
+const CACHE_VERSION = 'salt-v6-2026-06-24';
 const CACHE_NAME = `salt-instrumente-${CACHE_VERSION}`;
 const PRECACHE = ['./', './index.html'];
 

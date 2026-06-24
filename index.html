@@ -731,6 +731,8 @@ td.isin {
 .wl-bd { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-family: 'DM Mono', monospace; border-bottom: 1px solid var(--border); padding: 2px 0; }
 .wl-bd b.pos { color: var(--green); }
 .wl-bd b.neg { color: var(--accent); }
+#wlTable .wl-spark { width: 96px; padding: 4px 8px; }
+#wlTable .wl-spark svg { width: 88px; height: 26px; display: block; }
 </style>
 </head>
 <body>
@@ -739,7 +741,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.4</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.5</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -997,6 +999,12 @@ td.isin {
       <button class="scan-btn" onclick="wlAddManual()">+ Adaugă</button>
       <button class="ai-btn" id="wlRefreshBtn" onclick="wlRefresh()">↻ Actualizează prețuri</button>
       <button class="ai-btn" id="wlCompareBtn" onclick="wlCompareAi()" disabled style="border-color:var(--purple);color:var(--purple)">🧠 Compară AI</button>
+      <div class="seg" id="wlSparkSeg" style="margin-left:auto" title="Fereastra sparkline-ului">
+        <button class="seg-btn" data-spark="7" onclick="wlSetSpark(7)">7z</button>
+        <button class="seg-btn" data-spark="15" onclick="wlSetSpark(15)">15z</button>
+        <button class="seg-btn active" data-spark="30" onclick="wlSetSpark(30)">30z</button>
+        <button class="seg-btn" data-spark="90" onclick="wlSetSpark(90)">90z</button>
+      </div>
     </div>
 
     <div class="filters">
@@ -1023,7 +1031,7 @@ td.isin {
           <th>Verdict</th><th style="text-align:right" title="Scor 0-100">Scor</th>
           <th>Nume</th>
           <th style="text-align:right">Preț</th><th style="text-align:right">Δ Zi</th>
-          <th style="text-align:right">RSI</th><th></th>
+          <th style="text-align:right">RSI</th><th>Trend</th><th></th>
         </tr></thead>
         <tbody id="wlResults"></tbody>
       </table>
@@ -2229,6 +2237,15 @@ function updateWlCount(){
 // W1: scor cache-uit per rând (din closes + m + bench SPY)
 function wlScored(key){ const d = wlData[key]; return (d && d.m && d.closes) ? wlScore(d.closes, d.m, _wlBench) : null; }
 let wlExpanded = new Set();
+// W2: sparkline configurabil (fereastră în zile, persistată)
+let wlSparkDays = 30;
+(function(){ try { const s = +localStorage.getItem('salt_wl_spark'); if(s) wlSparkDays = s; } catch(e){} })();
+function wlSetSpark(n){
+  wlSparkDays = n;
+  try { localStorage.setItem('salt_wl_spark', n); } catch(e){}
+  document.querySelectorAll('#wlSparkSeg .seg-btn').forEach(b => b.classList.toggle('active', +b.dataset.spark === n));
+  wlRender();
+}
 function wlToggleDetail(key){ if(wlExpanded.has(key)) wlExpanded.delete(key); else wlExpanded.add(key); wlRender(); }
 function wlRowClick(ev, key){ if(ev.target.closest('button, input, a')) return; wlToggleDetail(key); }
 function updateWlStats(){
@@ -2263,6 +2280,7 @@ function wlRender(){
       ${cell(m?('$'+m.last.toFixed(2)):'')}
       ${cell(m?((m.chg>=0?'+':'')+m.chg.toFixed(2)+'%'):'', m?(m.chg>=0?'pos':'neg'):'')}
       ${cell(m?m.rsi.toFixed(0):'')}
+      <td class="wl-spark">${ (m && d.closes && d.closes.length > 1) ? sparkline(d.closes.slice(-wlSparkDays)) : '<span style="color:var(--text-dim)">–</span>' }</td>
       <td style="text-align:right" onclick="event.stopPropagation()"><button class="btn-row" title="Scoate din watchlist" onclick="wlRemove('${kq}')">✕</button></td>
     </tr>`;
     let detail = '';
@@ -2272,7 +2290,7 @@ function wlRender(){
       const beta = sc.beta != null ? sc.beta.toFixed(2) : '–';
       const dm = (l, v) => `<div class="wl-dm"><span>${l}</span><b>${v}</b></div>`;
       const bdHtml = sc.breakdown.map(b => `<div class="wl-bd"><span>${escapeHtml(b.l)}</span><b class="${b.p>=0?'pos':'neg'}">${b.p>=0?'+':''}${b.p}</b></div>`).join('');
-      detail = `<tr class="wl-detail"><td colspan="8">
+      detail = `<tr class="wl-detail"><td colspan="9">
         <div class="wl-dm-grid">
           ${dm('vs MA50', ma50s)}${dm('vs MA200', ma200s)}${dm('β vs SPY', beta)}
           ${dm('Δ 7z', (m.w7>=0?'+':'')+m.w7.toFixed(1)+'%')}${dm('Δ 30z', (m.w30>=0?'+':'')+m.w30.toFixed(1)+'%')}
@@ -2424,6 +2442,7 @@ updateWlCount();
 loadEbLast();    // F3: arată instant ultimul scan Early Bird (re-scanează pt date proaspete)
 loadLosLast();   // F3: idem Top Losers
 initRiskBadge(); // H: badge regim de risc (async, non-blocant)
+document.querySelectorAll('#wlSparkSeg .seg-btn').forEach(b => b.classList.toggle('active', +b.dataset.spark === wlSparkDays)); // W2: sync selector sparkline
 
 // ── toast ──
 function showToast(msg){
