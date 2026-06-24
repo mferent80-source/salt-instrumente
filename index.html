@@ -726,6 +726,8 @@ td.isin {
 .wl-dm { display: flex; flex-direction: column; gap: 2px; }
 .wl-dm span { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; }
 .wl-dm b { font-size: 13px; color: var(--text); font-family: 'DM Mono', monospace; }
+.wl-dm b.wl-pos { color: var(--green); }
+.wl-dm b.wl-neg { color: var(--accent); }
 .wl-bd-title { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
 .wl-bd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 2px 14px; }
 .wl-bd { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-family: 'DM Mono', monospace; border-bottom: 1px solid var(--border); padding: 2px 0; }
@@ -747,7 +749,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.10</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.11</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -2251,6 +2253,8 @@ function updateWlCount(){
 }
 // W1: scor cache-uit per rând (din closes + m + bench SPY)
 function wlScored(key){ const d = wlData[key]; return (d && d.m && d.closes) ? wlScore(d.closes, d.m, _wlBench) : null; }
+// P-C: vârsta de când e în watchlist
+function fmtAge(ts){ if(!ts) return '?'; const d = Math.floor((Date.now()-ts)/86400000); return d <= 0 ? 'azi' : d === 1 ? '1 zi' : `${d} zile`; }
 // P-B: sortare pe coloane
 let wlSort = (function(){ try { return JSON.parse(localStorage.getItem('salt_wl_sort')) || { col:'score', dir:-1 }; } catch(e){ return { col:'score', dir:-1 }; } })();
 function wlSetSort(col){
@@ -2327,11 +2331,13 @@ function wlRender(){
       const ma50s = sc.aMa50 != null ? `${sc.aMa50>=0?'+':''}${sc.aMa50.toFixed(1)}%` : '–';
       const ma200s = sc.aMa200 != null ? `${sc.aMa200>=0?'+':''}${sc.aMa200.toFixed(1)}%` : '–';
       const beta = sc.beta != null ? sc.beta.toFixed(2) : '–';
-      const dm = (l, v) => `<div class="wl-dm"><span>${l}</span><b>${v}</b></div>`;
+      const perf = w.addedPrice ? (m.last/w.addedPrice - 1)*100 : null;   // P-C
+      const perfStr = perf != null ? `${perf>=0?'+':''}${perf.toFixed(1)}%` : '–';
+      const dm = (l, v, cls) => `<div class="wl-dm"><span>${l}</span><b class="${cls||''}">${v}</b></div>`;
       const bdHtml = sc.breakdown.map(b => `<div class="wl-bd"><span>${escapeHtml(b.l)}</span><b class="${b.p>=0?'pos':'neg'}">${b.p>=0?'+':''}${b.p}</b></div>`).join('');
       detail = `<tr class="wl-detail"><td colspan="9">
         <div class="wl-dm-grid">
-          ${dm('vs MA50', ma50s)}${dm('vs MA200', ma200s)}${dm('β vs SPY', beta)}
+          ${dm(`De la add (${fmtAge(w.addedAt)})`, perfStr, perf!=null ? (perf>=0?'wl-pos':'wl-neg') : '')}${dm('vs MA50', ma50s)}${dm('vs MA200', ma200s)}${dm('β vs SPY', beta)}
           ${dm('Δ 7z', (m.w7>=0?'+':'')+m.w7.toFixed(1)+'%')}${dm('Δ 30z', (m.w30>=0?'+':'')+m.w30.toFixed(1)+'%')}
           ${dm('Volum', (m.volRatio||0).toFixed(1)+'×')}${dm('Poz 52s', (m.pos*100).toFixed(0)+'%')}${dm('ATR', (m.atr||0).toFixed(2))}
         </div>
@@ -2403,6 +2409,8 @@ async function wlRefresh(force){
         const res = await metricsFor(w.raw ? {raw:true, ticker:w.ticker} : w);
         if(!res.error){
           if(!w.ticker){ w.ticker = res.ticker; wlSave(); }
+          // P-C: ancorează prețul + momentul la primul refresh (performance „de la adăugare")
+          if(!w.addedPrice && res.m){ w.addedPrice = res.m.last; w.addedAt = w.addedAt || Date.now(); wlSave(); }
           const entry = { ticker: res.ticker, m: res.m, closes: res.closes };   // W1: closes pt scoring/MA/beta
           // W3: preț live extended DOAR pt US în pre/after (EU/RTH n-au extended pe Yahoo)
           const sess = usSessionET();
