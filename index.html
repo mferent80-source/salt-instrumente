@@ -948,7 +948,8 @@ td.isin {
           <th style="text-align:right">Zi</th><th style="text-align:right">7z</th>
           <th style="text-align:right">14z</th><th style="text-align:right">30z</th>
           <th style="text-align:right">RSI</th><th style="text-align:right">Vol×</th>
-          <th style="text-align:right">52s</th><th></th>
+          <th style="text-align:right">52s</th>
+          <th style="text-align:right" title="Reversal Score 0-100: probabilitate rebound">Rev</th><th></th>
         </tr></thead>
         <tbody id="losResults"></tbody>
       </table>
@@ -1868,6 +1869,21 @@ function losSetMode(m){
 }
 function losDrop(x){ return losMode==='day' ? x.m.chg : x.m[losMode]; }   // negative = drop; losMode: day|w7|w14|w30
 function isReversal(m){ return m.w3 > 0 && m.w7 < 0; }
+// F4: Reversal Score 0-100 — cât de probabil e un rebound (nu doar flag binar)
+function reversalScore(m){
+  let s = 0;
+  if(m.w3 > 0 && m.w7 < 0)   s += 35;       // cotitură incipientă: urcă pe 3z dar încă jos pe 7z
+  else if(m.w3 > 0)          s += 12;
+  if(m.rsi < 30)             s += 25;        // oversold = combustibil de rebound
+  else if(m.rsi < 40)        s += 16;
+  else if(m.rsi < 50)        s += 6;
+  if(m.volRatio >= 1.5)      s += 18;        // participare la revenire
+  else if(m.volRatio >= 1.1) s += 10;
+  if(m.chg > 0)              s += 12;        // ziua curentă verde după drop
+  if(m.pos >= 0.1 && m.pos <= 0.4) s += 10;
+  else if(m.pos < 0.1)       s -= 8;         // prăbușit total = falling knife
+  return Math.max(0, Math.min(100, Math.round(s)));
+}
 
 async function startLoserScan(force){
   if(losScanning) return;
@@ -1978,6 +1994,7 @@ function renderLosers(){
   tbody.innerHTML = sorted.map(x => {
     const sel = losSelected.has(x.ticker);
     const rev = isReversal(x.m);
+    const rs = reversalScore(x.m);
     return `<tr class="${sel?'row-sel':''} ${rev?'row-rev':''}">
       <td><input type="checkbox" ${sel?'checked':''} onclick="losToggleSel('${x.ticker}')"></td>
       <td class="name">${escapeHtml(x.name)}${rev?' <span title="se întoarce în sus" class="wl-fav">🌱</span>':''}</td>
@@ -1990,6 +2007,7 @@ function renderLosers(){
       <td style="text-align:right">${x.m.rsi.toFixed(0)}</td>
       <td style="text-align:right" class="${x.m.volRatio>=2?'vol-hot':''}">${(x.m.volRatio||0).toFixed(1)}×</td>
       <td style="text-align:right">${(x.m.pos*100).toFixed(0)}%</td>
+      <td style="text-align:right;font-weight:700;color:${rs>=60?'var(--green)':rs>=40?'var(--text)':'var(--text-dim)'}" title="Reversal Score (probabilitate rebound)">${rs}</td>
       <td style="text-align:right;white-space:nowrap">
         <button class="btn-row ${wlHas(x.name)?'added':''}" title="${wlHas(x.name)?'deja în watchlist':'Adaugă în watchlist'}" onclick="wlAddByName('${encodeURIComponent(x.name)}')">${wlHas(x.name)?'✓':'👁️'}</button>
         <a class="btn-row" href="https://finance.yahoo.com/quote/${encodeURIComponent(x.ticker)}" target="_blank" style="text-decoration:none">📈</a>
