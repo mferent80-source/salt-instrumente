@@ -751,7 +751,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.13</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.14</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -891,6 +891,7 @@ td.isin {
       <button class="ai-btn" id="ebForceBtn" onclick="startEarlyScan(true)" title="Golește cache-ul zilei și ia prețuri proaspete">🔄</button>
       <button class="ai-btn" id="aiCompareBtn" onclick="aiCompareEarly()" disabled>🧠 Compară cu AI</button>
       <button class="ai-btn" id="csvBtn" onclick="exportEarlyCsv()" disabled style="border-color:var(--green);color:var(--green)">⬇ Export CSV</button>
+      <button class="ai-btn" onclick="ebAddAllToWl()" title="Adaugă toate candidatele în Watchlist">👁️ Toate în WL</button>
       <label class="scan-hint" style="display:flex;gap:6px;align-items:center">Sortează:
         <select id="ebSort" onchange="resortEarly()" style="background:var(--bg-soft);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-family:'DM Mono',monospace;font-size:11px">
           <option value="score">Scor</option>
@@ -964,6 +965,7 @@ td.isin {
       <button class="ai-btn" id="losForceBtn" onclick="startLoserScan(true)" title="Golește cache-ul zilei și ia prețuri proaspete">🔄</button>
       <button class="ai-btn" id="losReversalBtn" onclick="losReversalEarly()" disabled style="border-color:var(--green);color:var(--green)">🌱→ Reversal early</button>
       <button class="ai-btn" id="losCsvBtn" onclick="exportLosersCsv()" disabled style="border-color:var(--green);color:var(--green)">⬇ CSV</button>
+      <button class="ai-btn" onclick="losAddAllToWl()" title="Adaugă toți loserii în Watchlist">👁️ Toți în WL</button>
       <span class="scan-hint" id="losHint">Filtrează, apoi scanează.</span>
     </div>
 
@@ -2213,6 +2215,16 @@ function wlAddByName(enc){
   const item = INSTRUMENTS.find(i => i.name === name);
   if(item) wlAddInstrument(item);
 }
+// P-F: adaugă tot rezultatul unei scanări în watchlist (un singur render la final)
+function _addAllToWl(list, what){
+  if(!list || !list.length){ showToast(`Rulează întâi o scanare ${what}`); return; }
+  let n = 0;
+  list.forEach(x => { if(wlAddInstrument({ name:x.name, isin:x.isin, type:x.type, jurisdiction:x.jurisdiction, ticker:x.ticker }, true)) n++; });
+  if(n){ wlSave(); wlRender(); wlRefresh(); syncAddButtons(); }
+  showToast(n ? `👁️ ${n} adăugate în watchlist` : 'Toate erau deja în watchlist');
+}
+function ebAddAllToWl(){ _addAllToWl(ebResults, 'Early Bird'); }
+function losAddAllToWl(){ _addAllToWl(losResults, 'Losers'); }
 function wlAddManual(){
   const inp = document.getElementById('wlInput');
   const q = (inp.value||'').trim();
