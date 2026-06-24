@@ -733,6 +733,7 @@ td.isin {
 .wl-bd { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-family: 'DM Mono', monospace; border-bottom: 1px solid var(--border); padding: 2px 0; }
 .wl-bd b.pos { color: var(--green); }
 .wl-bd b.neg { color: var(--accent); }
+.wl-note { background: rgba(245,158,11,.08); border-left: 3px solid #f59e0b; padding: 6px 10px; border-radius: 4px; font-size: 12px; margin-bottom: 10px; color: var(--text); }
 #wlTable .wl-spark { width: 96px; padding: 4px 8px; }
 #wlTable .wl-spark svg { width: 88px; height: 26px; display: block; }
 .wl-sess { font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 3px; vertical-align: middle; margin-left: 3px; }
@@ -749,7 +750,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.11</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.12</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -1008,6 +1009,7 @@ td.isin {
       <button class="ai-btn" id="wlRefreshBtn" onclick="wlRefresh()">↻ Actualizează prețuri</button>
       <button class="ai-btn" id="wlCompareBtn" onclick="wlCompareAi()" disabled style="border-color:var(--purple);color:var(--purple)">🧠 Compară AI</button>
       <button class="ai-btn" id="wlAutoBtn" onclick="wlToggleAuto()">⏱️ Auto: OFF</button>
+      <button class="ai-btn" onclick="exportWlCsv()" style="border-color:var(--green);color:var(--green)">⬇ CSV</button>
       <span class="scan-hint" id="wlCountdown" style="align-self:center"></span>
       <div class="seg" id="wlSparkSeg" style="margin-left:auto" title="Fereastra sparkline-ului">
         <button class="seg-btn" data-spark="7" onclick="wlSetSpark(7)">7z</button>
@@ -2255,6 +2257,30 @@ function updateWlCount(){
 function wlScored(key){ const d = wlData[key]; return (d && d.m && d.closes) ? wlScore(d.closes, d.m, _wlBench) : null; }
 // P-C: vârsta de când e în watchlist
 function fmtAge(ts){ if(!ts) return '?'; const d = Math.floor((Date.now()-ts)/86400000); return d <= 0 ? 'azi' : d === 1 ? '1 zi' : `${d} zile`; }
+// P-D: notă per instrument + export CSV
+function wlSetNote(key){
+  const w = watchlist.find(x => x.key === key); if(!w) return;
+  const v = prompt(`Notă pentru ${w.name} (de ce e pe watchlist):`, w.note || '');
+  if(v === null) return;
+  w.note = v.trim(); wlSave(); wlRender();
+}
+function exportWlCsv(){
+  if(!watchlist.length){ alert('Watchlist gol.'); return; }
+  const head = ['Nume','Ticker','Tara','Verdict','Scor','Pret','Zi%','RSI','MA50%','MA200%','Beta','DeLaAdd%','Nota'];
+  const rows = watchlist.map(w => {
+    const d = wlData[w.key], m = d && d.m, sc = wlScored(w.key);
+    const px = m ? (d.live ? d.live.last : m.last) : null;
+    const perf = (w.addedPrice && m) ? (m.last/w.addedPrice - 1)*100 : null;
+    return [ w.name, w.ticker||'', w.jurisdiction||'', sc ? sc.vtxt.replace(/[^\x20-\x7EÀ-ɏ]/g,'').trim() : '', sc ? sc.score : '',
+      px != null ? px.toFixed(2) : '', m ? m.chg.toFixed(2) : '', m ? m.rsi.toFixed(0) : '',
+      (sc && sc.aMa50 != null) ? sc.aMa50.toFixed(1) : '', (sc && sc.aMa200 != null) ? sc.aMa200.toFixed(1) : '',
+      (sc && sc.beta != null) ? sc.beta.toFixed(2) : '', perf != null ? perf.toFixed(1) : '', w.note || '' ];
+  });
+  const csv = [head, ...rows].map(r => r.map(c => { const s = String(c).replace(/"/g,'""'); return /[",\n;]/.test(s) ? `"${s}"` : s; }).join(';')).join('\r\n');
+  const blob = new Blob(['﻿'+csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `salt_watchlist_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); showToast('✅ CSV exportat');
+}
 // P-B: sortare pe coloane
 let wlSort = (function(){ try { return JSON.parse(localStorage.getItem('salt_wl_sort')) || { col:'score', dir:-1 }; } catch(e){ return { col:'score', dir:-1 }; } })();
 function wlSetSort(col){
@@ -2336,6 +2362,7 @@ function wlRender(){
       const dm = (l, v, cls) => `<div class="wl-dm"><span>${l}</span><b class="${cls||''}">${v}</b></div>`;
       const bdHtml = sc.breakdown.map(b => `<div class="wl-bd"><span>${escapeHtml(b.l)}</span><b class="${b.p>=0?'pos':'neg'}">${b.p>=0?'+':''}${b.p}</b></div>`).join('');
       detail = `<tr class="wl-detail"><td colspan="9">
+        ${w.note ? `<div class="wl-note">📝 ${escapeHtml(w.note)}</div>` : ''}
         <div class="wl-dm-grid">
           ${dm(`De la add (${fmtAge(w.addedAt)})`, perfStr, perf!=null ? (perf>=0?'wl-pos':'wl-neg') : '')}${dm('vs MA50', ma50s)}${dm('vs MA200', ma200s)}${dm('β vs SPY', beta)}
           ${dm('Δ 7z', (m.w7>=0?'+':'')+m.w7.toFixed(1)+'%')}${dm('Δ 30z', (m.w30>=0?'+':'')+m.w30.toFixed(1)+'%')}
@@ -2346,6 +2373,7 @@ function wlRender(){
         <div style="margin-top:10px">
           <a class="btn-row" href="https://finance.yahoo.com/quote/${encodeURIComponent(w.ticker||'')}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none">📈 Yahoo</a>
           <button class="btn-row" onclick="event.stopPropagation();openSizer(${m.last},${(m.last*0.95).toFixed(4)},'${encodeURIComponent(w.name)}')">💰 Sizing</button>
+          <button class="btn-row" onclick="event.stopPropagation();wlSetNote('${kq}')">📝 ${w.note ? 'Editează nota' : 'Notă'}</button>
         </div>
       </td></tr>`;
     }
