@@ -747,7 +747,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.9</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.10</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -1036,10 +1036,13 @@ td.isin {
       <table id="wlTable">
         <thead><tr>
           <th style="cursor:default"><input type="checkbox" id="wlCheckAll" onclick="wlToggleAll(this.checked)" title="Selectează tot"></th>
-          <th>Verdict</th><th style="text-align:right" title="Scor 0-100">Scor</th>
-          <th>Nume</th>
-          <th style="text-align:right">Preț</th><th style="text-align:right">Δ Zi</th>
-          <th style="text-align:right">RSI</th><th>Trend</th><th></th>
+          <th style="cursor:pointer" onclick="wlSetSort('score')" title="Sortează după scor">Verdict <span class="sort-ind" data-sc="score"></span></th>
+          <th style="text-align:right;cursor:pointer" onclick="wlSetSort('score')" title="Scor 0-100">Scor</th>
+          <th style="cursor:pointer" onclick="wlSetSort('name')">Nume <span class="sort-ind" data-sc="name"></span></th>
+          <th style="text-align:right;cursor:pointer" onclick="wlSetSort('price')">Preț <span class="sort-ind" data-sc="price"></span></th>
+          <th style="text-align:right;cursor:pointer" onclick="wlSetSort('chg')">Δ Zi <span class="sort-ind" data-sc="chg"></span></th>
+          <th style="text-align:right;cursor:pointer" onclick="wlSetSort('rsi')">RSI <span class="sort-ind" data-sc="rsi"></span></th>
+          <th>Trend</th><th></th>
         </tr></thead>
         <tbody id="wlResults"></tbody>
       </table>
@@ -2248,6 +2251,25 @@ function updateWlCount(){
 }
 // W1: scor cache-uit per rând (din closes + m + bench SPY)
 function wlScored(key){ const d = wlData[key]; return (d && d.m && d.closes) ? wlScore(d.closes, d.m, _wlBench) : null; }
+// P-B: sortare pe coloane
+let wlSort = (function(){ try { return JSON.parse(localStorage.getItem('salt_wl_sort')) || { col:'score', dir:-1 }; } catch(e){ return { col:'score', dir:-1 }; } })();
+function wlSetSort(col){
+  if(wlSort.col === col) wlSort.dir *= -1;
+  else { wlSort.col = col; wlSort.dir = (col === 'name') ? 1 : -1; }
+  try { localStorage.setItem('salt_wl_sort', JSON.stringify(wlSort)); } catch(e){}
+  wlRender();
+}
+function wlSortVal(w){
+  const d = wlData[w.key], m = d && d.m, sc = wlScored(w.key);
+  switch(wlSort.col){
+    case 'score': return sc ? sc.score : -1;
+    case 'price': return m ? (d.live ? d.live.last : m.last) : -1;
+    case 'chg':   return m ? m.chg : -999;
+    case 'rsi':   return m ? m.rsi : -1;
+    case 'name':  return (w.name || '').toLowerCase();
+    default: return 0;
+  }
+}
 let wlExpanded = new Set();
 // W2: sparkline configurabil (fereastră în zile, persistată)
 let wlSparkDays = 30;
@@ -2270,6 +2292,7 @@ function updateWlStats(){
 function wlRender(){
   updateWlCount();
   const rows = watchlist.filter(w => wlPass(w.key));
+  rows.sort((a, b) => { const va = wlSortVal(a), vb = wlSortVal(b); return (typeof va === 'string') ? wlSort.dir * va.localeCompare(vb) : wlSort.dir * (va - vb); });   // P-B
   document.getElementById('wlCount').textContent = watchlist.length;
   document.getElementById('wlSummary').textContent = wlFilter==='all' ? '' : `filtru: ${wlFilter} · ${rows.length} afișate`;
   const wrap = document.getElementById('wlTableWrap'), empty = document.getElementById('wlEmpty');
@@ -2322,6 +2345,7 @@ function wlRender(){
     }
     return main + detail;
   }).join('');
+  document.querySelectorAll('#wlTable .sort-ind').forEach(s => { s.textContent = wlSort.col === s.dataset.sc ? (wlSort.dir < 0 ? '▼' : '▲') : ''; });   // P-B
   wlUpdateCmpBar(); updateWlStats();
 }
 // W1: benchmark SPY pentru Beta/α (cache 30 min)
