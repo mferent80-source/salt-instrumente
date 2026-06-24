@@ -1122,12 +1122,16 @@ const PROXIES = [
 async function proxiedJson(url){
   const attempts = [url, ...PROXIES.map(p => p(url))];
   for(const a of attempts){
+    // timeout 9s per încercare: un proxy lent/mort NU mai blochează tot lanțul (treci la următorul)
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 9000);
     try {
-      const r = await fetch(a, { headers: { 'Accept': 'application/json' } });
+      const r = await fetch(a, { headers: { 'Accept': 'application/json' }, signal: ctrl.signal });
       if(!r.ok) continue;
       const j = await r.json();
       if(j) return j;
     } catch(e){ /* try next proxy */ }
+    finally { clearTimeout(to); }
   }
   return null;
 }
@@ -1244,7 +1248,9 @@ async function yahooSearch(query){
 }
 async function resolveSymbol(item){
   const cache = symCache();
-  if(item.name in cache) return cache[item.name];
+  // returnează DOAR hit-uri reale; null/undefined (fail anterior) → reîncearcă.
+  // Auto-vindecă instrumentele „otrăvite" de fail-uri temporare de proxy (NU mai rămân negăsite permanent).
+  if(cache[item.name]) return cache[item.name];
   let result = null;
 
   // 1) Yahoo search by ISIN — returns the listing with the correct exchange suffix.
@@ -1265,8 +1271,8 @@ async function resolveSymbol(item){
     }
   }
 
-  cache[item.name] = result;
-  saveSymCache(cache);
+  // NU cache-ui null (altfel un fail temporar de proxy = instrument otrăvit permanent)
+  if(result){ cache[item.name] = result; saveSymCache(cache); }
   return result;
 }
 
@@ -1278,8 +1284,18 @@ async function fetchSeries(symbol){
   if(!r || !q || !q.close){
     return { error: (j && j.chart && j.chart.error && j.chart.error.description) || 'fără date Yahoo' };
   }
+  // ANTI-REPAINT: cât timp bursa PROPRIE a instrumentului e în sesiune, ultima bară daily e
+  // PARȚIALĂ (în formare) → volumul de azi e incomplet (volRatio fals subunitar dimineața) și
+  // close-ul se mișcă, deci scorul ar oscila ora-de-oră. Excludem bara de azi din scoring cât
+  // bursa e deschisă (exchange-aware via currentTradingPeriod). După închidere bara e completă → o păstrăm.
+  const meta = r.meta || {};
+  const reg = meta.currentTradingPeriod && meta.currentTradingPeriod.regular;
+  const nowSec = Date.now() / 1000;
+  const sessionOpen = reg && nowSec >= reg.start && nowSec < reg.end;
+  const lastIdx = q.close.length - 1;
   const closes = [], volumes = [];
   for(let i = 0; i < q.close.length; i++){
+    if(i === lastIdx && sessionOpen) continue;   // sare bara parțială a zilei cât bursa e deschisă
     if(q.close[i] == null) continue;
     closes.push(q.close[i]);
     volumes.push(q.volume && q.volume[i] != null ? q.volume[i] : 0);
