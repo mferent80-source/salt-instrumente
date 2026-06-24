@@ -733,6 +733,12 @@ td.isin {
 .wl-bd b.neg { color: var(--accent); }
 #wlTable .wl-spark { width: 96px; padding: 4px 8px; }
 #wlTable .wl-spark svg { width: 88px; height: 26px; display: block; }
+.wl-sess { font-family: 'DM Mono', monospace; font-size: 8px; font-weight: 700; padding: 1px 4px; border-radius: 3px; vertical-align: middle; margin-left: 3px; }
+.wl-sess.pre    { background: rgba(91,176,255,.15); color: #5bb0ff; }
+.wl-sess.after  { background: rgba(167,139,250,.15); color: #a78bfa; }
+.wl-sess.rth    { background: rgba(34,197,94,.15); color: var(--green); }
+.wl-sess.closed { background: var(--bg-soft); color: var(--text-dim); }
+.wl-sess.eu     { background: rgba(245,158,11,.13); color: #f59e0b; }
 </style>
 </head>
 <body>
@@ -741,7 +747,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.5</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.6</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -2270,6 +2276,10 @@ function wlRender(){
     const sel = wlSelected.has(w.key);
     const rev = m && isReversal(m);
     const kq = w.key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const sess = m ? (isEUticker(w.ticker) ? 'eu' : usSessionET()) : null;   // W3
+    const SESSLBL = { pre:'PRE', rth:'RTH', after:'AFT', closed:'CLS', eu:'EU' };
+    const sessBadge = sess ? `<span class="wl-sess ${sess}">${SESSLBL[sess]}</span>` : '';
+    const px = (d && d.live) ? d.live.last : (m ? m.last : null);   // preț live extended dacă există
     const cell = (v, cls) => m ? `<td style="text-align:right" class="${cls||''}">${v}</td>` : `<td style="text-align:right;color:var(--text-dim)">–</td>`;
     const vcell = sc ? `<td><span class="verdict ${sc.verdict}">${sc.vtxt}</span></td>` : `<td><span class="verdict hold">–</span></td>`;
     const scell = sc ? `<td style="text-align:right;font-weight:800">${sc.score}</td>` : `<td style="text-align:right;color:var(--text-dim)">–</td>`;
@@ -2277,7 +2287,7 @@ function wlRender(){
       <td onclick="event.stopPropagation()"><input type="checkbox" ${sel?'checked':''} onclick="wlToggleSel('${kq}')"></td>
       ${vcell}${scell}
       <td class="name">${escapeHtml(w.name)}${rev?' <span class="wl-fav">🌱</span>':''}<div style="font-size:10px;color:var(--text-dim)">${escapeHtml(w.ticker||'—')} · ${escapeHtml(w.jurisdiction||'—')}</div></td>
-      ${cell(m?('$'+m.last.toFixed(2)):'')}
+      ${ m ? `<td style="text-align:right">$${px.toFixed(2)} ${sessBadge}</td>` : '<td style="text-align:right;color:var(--text-dim)">–</td>' }
       ${cell(m?((m.chg>=0?'+':'')+m.chg.toFixed(2)+'%'):'', m?(m.chg>=0?'pos':'neg'):'')}
       ${cell(m?m.rsi.toFixed(0):'')}
       <td class="wl-spark">${ (m && d.closes && d.closes.length > 1) ? sparkline(d.closes.slice(-wlSparkDays)) : '<span style="color:var(--text-dim)">–</span>' }</td>
@@ -2319,6 +2329,34 @@ async function ensureWlBench(){
   } catch(e){}
   return _wlBench;
 }
+// W3: sesiunea US din ora ET + detectare bursă EU + preț live extended (US pre/after)
+function usSessionET(){
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone:'America/New_York', hour12:false, weekday:'short', hour:'2-digit', minute:'2-digit' }).formatToParts(new Date()).map(x => [x.type, x.value]));
+    if(p.weekday === 'Sat' || p.weekday === 'Sun') return 'closed';
+    const mins = (+p.hour)*60 + (+p.minute);
+    if(mins >= 240 && mins < 570) return 'pre';      // 04:00–09:30 ET
+    if(mins >= 570 && mins < 960) return 'rth';      // 09:30–16:00 ET
+    if(mins >= 960 && mins < 1200) return 'after';   // 16:00–20:00 ET
+    return 'closed';
+  } catch(e){ return 'rth'; }
+}
+const isEUticker = t => /\.(DE|PA|AS|MI|L|MC|F|BE|MU|SG|DU|HM|VI|CO|SW|VX|VI|TO|V|AX|HK|SS|SZ)$/i.test(t || '');
+async function fetchLiveExt(ticker){
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1m&range=1d&includePrePost=true`;
+  const j = await proxiedJson(url);
+  const r = j && j.chart && j.chart.result && j.chart.result[0];
+  const q = r && r.indicators && r.indicators.quote && r.indicators.quote[0];
+  if(!q || !q.close) return null;
+  let last = null;
+  for(let i = q.close.length - 1; i >= 0; i--){ if(q.close[i] != null){ last = q.close[i]; break; } }
+  if(last == null) return null;
+  const meta = r.meta || {};
+  const sess = usSessionET();
+  // referință extended: pre = close ieri (regularMarketPrice), after = close azi (regularMarketPrice)
+  const ref = meta.regularMarketPrice || meta.chartPreviousClose;
+  return { last, sess, chgExt: ref ? (last - ref) / ref * 100 : null };
+}
 let wlRefreshing = false;
 async function wlRefresh(force){
   if(wlRefreshing) return;
@@ -2335,7 +2373,13 @@ async function wlRefresh(force){
         const res = await metricsFor(w.raw ? {raw:true, ticker:w.ticker} : w);
         if(!res.error){
           if(!w.ticker){ w.ticker = res.ticker; wlSave(); }
-          wlData[w.key] = { ticker: res.ticker, m: res.m, closes: res.closes };   // W1: closes pt scoring/MA/beta
+          const entry = { ticker: res.ticker, m: res.m, closes: res.closes };   // W1: closes pt scoring/MA/beta
+          // W3: preț live extended DOAR pt US în pre/after (EU/RTH n-au extended pe Yahoo)
+          const sess = usSessionET();
+          if(!isEUticker(res.ticker) && (sess === 'pre' || sess === 'after')){
+            try { const live = await fetchLiveExt(res.ticker); if(live) entry.live = live; } catch(e){}
+          }
+          wlData[w.key] = entry;
           wlRender();
         }
       } catch(e){}
