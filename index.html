@@ -747,7 +747,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.6</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.7</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -1005,6 +1005,8 @@ td.isin {
       <button class="scan-btn" onclick="wlAddManual()">+ Adaugă</button>
       <button class="ai-btn" id="wlRefreshBtn" onclick="wlRefresh()">↻ Actualizează prețuri</button>
       <button class="ai-btn" id="wlCompareBtn" onclick="wlCompareAi()" disabled style="border-color:var(--purple);color:var(--purple)">🧠 Compară AI</button>
+      <button class="ai-btn" id="wlAutoBtn" onclick="wlToggleAuto()">⏱️ Auto: OFF</button>
+      <span class="scan-hint" id="wlCountdown" style="align-self:center"></span>
       <div class="seg" id="wlSparkSeg" style="margin-left:auto" title="Fereastra sparkline-ului">
         <button class="seg-btn" data-spark="7" onclick="wlSetSpark(7)">7z</button>
         <button class="seg-btn" data-spark="15" onclick="wlSetSpark(15)">15z</button>
@@ -2389,7 +2391,47 @@ async function wlRefresh(force){
   if(btn){ btn.disabled = false; btn.textContent = '↻ Actualizează prețuri'; }
   wlRefreshing = false;
   wlRender();
+  wlCheckVerdictChanges();   // W4: toast la îmbunătățire de verdict
   flushQuoteCache();   // PERF: scrie cache-ul o singură dată la final
+}
+// ── W4: auto-scan cu countdown + verdict toast ──
+let wlAutoOn = false, wlAutoTimer = null, wlCountTimer = null, wlNextScan = 0;
+const WL_AUTO_MS = 60000;
+function wlToggleAuto(){
+  wlAutoOn = !wlAutoOn;
+  const btn = document.getElementById('wlAutoBtn');
+  if(wlAutoOn){
+    if(btn){ btn.textContent = '⏱️ Auto: ON'; btn.style.borderColor = 'var(--green)'; btn.style.color = 'var(--green)'; }
+    wlRefresh(true);          // un scan imediat la pornire
+    wlScheduleAuto();
+  } else {
+    if(btn){ btn.textContent = '⏱️ Auto: OFF'; btn.style.borderColor = ''; btn.style.color = ''; }
+    clearTimeout(wlAutoTimer); clearInterval(wlCountTimer);
+    const el = document.getElementById('wlCountdown'); if(el) el.textContent = '';
+  }
+  try { localStorage.setItem('salt_wl_auto', wlAutoOn ? '1' : '0'); } catch(e){}
+}
+function wlScheduleAuto(){
+  clearTimeout(wlAutoTimer); clearInterval(wlCountTimer);
+  wlNextScan = Date.now() + WL_AUTO_MS;
+  wlCountTimer = setInterval(() => {
+    const el = document.getElementById('wlCountdown'); if(!el) return;
+    el.textContent = wlAutoOn ? `următorul scan în ${Math.max(0, Math.ceil((wlNextScan - Date.now())/1000))}s` : '';
+  }, 1000);
+  wlAutoTimer = setTimeout(async () => { if(wlAutoOn){ await wlRefresh(true); if(wlAutoOn) wlScheduleAuto(); } }, WL_AUTO_MS);
+}
+let wlPrevVerdict = {};
+function wlCheckVerdictChanges(){
+  const rank = { 'strong-sell':0, 'sell':1, 'hold':2, 'buy':3, 'strong-buy':4 };
+  watchlist.forEach(w => {
+    const sc = wlScored(w.key); if(!sc) return;
+    const prev = wlPrevVerdict[w.key];
+    // toast doar la URCARE spre BUY / STRONG BUY (nu spam la fiecare oscilație)
+    if(prev && prev !== sc.verdict && rank[sc.verdict] > rank[prev] && rank[sc.verdict] >= 3){
+      showToast(`${sc.vtxt}: ${w.name}`);
+    }
+    wlPrevVerdict[w.key] = sc.verdict;
+  });
 }
 function wlToggleSel(key){
   if(wlSelected.has(key)) wlSelected.delete(key); else wlSelected.add(key);
@@ -2487,6 +2529,7 @@ loadEbLast();    // F3: arată instant ultimul scan Early Bird (re-scanează pt 
 loadLosLast();   // F3: idem Top Losers
 initRiskBadge(); // H: badge regim de risc (async, non-blocant)
 document.querySelectorAll('#wlSparkSeg .seg-btn').forEach(b => b.classList.toggle('active', +b.dataset.spark === wlSparkDays)); // W2: sync selector sparkline
+try { if(localStorage.getItem('salt_wl_auto') === '1' && watchlist.length) wlToggleAuto(); } catch(e){}   // W4: repornește auto-scan dacă era ON
 
 // ── toast ──
 function showToast(msg){
