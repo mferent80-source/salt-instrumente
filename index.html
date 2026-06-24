@@ -1437,6 +1437,20 @@ function stageOf(m){
 // ── scan orchestrator (Yahoo, parallel pool) ──
 let ebAllScored = [];   // every analyzed instrument, sorted (for CSV + re-sort)
 let ebLastScan = '';
+// ── F3: persistă ultimul scan (render instant la reload, ca sr_last_scan din sector-rotation) ──
+const slimEb = x => ({ name:x.name, ticker:x.ticker, exch:x.exch, jurisdiction:x.jurisdiction, type:x.type, score:x.score, m:x.m, closes:(x.closes||[]).slice(-30) });
+function saveEbLast(){
+  try { localStorage.setItem('salt_eb_last', JSON.stringify({ ts:Date.now(), lastScan:ebLastScan, results:ebAllScored.map(slimEb), failed:(ebFailed||[]).slice(0,40) })); } catch(e){}
+}
+function loadEbLast(){
+  let s; try { s = JSON.parse(localStorage.getItem('salt_eb_last') || 'null'); } catch(e){ s = null; }
+  if(!s || !s.results || !s.results.length) return;
+  ebAllScored = s.results; ebFailed = s.failed || []; ebLastScan = s.lastScan || '';
+  ebResults = ebAllScored.filter(x => x.score >= 50);
+  renderEarlyBird(ebResults, ebAllScored, ebFailed);
+  const ai = document.getElementById('aiCompareBtn'); if(ai) ai.disabled = (ebResults.length === 0 && ebFailed.length === 0);
+  const csv = document.getElementById('csvBtn'); if(csv) csv.disabled = (ebAllScored.length === 0);
+}
 async function startEarlyScan(force){
   if(scanning) return;
   const subset = ebSubset().slice(0, SCAN_CAP);
@@ -1496,6 +1510,7 @@ async function startEarlyScan(force){
   ebFailed = failed;
   ebLastScan = new Date().toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'});
   renderEarlyBird(ebResults, scored, failed);
+  saveEbLast();   // F3: persistă pt render instant la reload
 
   pw.classList.remove('active');
   btn.disabled = false; btn.textContent = '⚡ Scanează momentum';
@@ -1892,6 +1907,7 @@ async function startLoserScan(force){
   losFailedCount = failed;
   losLastScan = new Date().toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'});
   renderLosers();
+  saveLosLast();   // F3: persistă pt render instant la reload
 
   pw.classList.remove('active');
   btn.disabled = false; btn.textContent = '🔻 Scanează losers';
@@ -1900,6 +1916,19 @@ async function startLoserScan(force){
   losScanning = false;
 }
 let losFailedCount = 0, losLastScan = '';
+// ── F3: persistă ultimul scan de losers ──
+const slimLos = x => ({ name:x.name, ticker:x.ticker, jurisdiction:x.jurisdiction, type:x.type, m:x.m, closes:(x.closes||[]).slice(-30) });
+function saveLosLast(){
+  try { localStorage.setItem('salt_los_last', JSON.stringify({ ts:Date.now(), lastScan:losLastScan, results:losResults.map(slimLos), failed:losFailedCount })); } catch(e){}
+}
+function loadLosLast(){
+  let s; try { s = JSON.parse(localStorage.getItem('salt_los_last') || 'null'); } catch(e){ s = null; }
+  if(!s || !s.results || !s.results.length) return;
+  losResults = s.results; losFailedCount = s.failed || 0; losLastScan = s.lastScan || '';
+  renderLosers();
+  const rb = document.getElementById('losReversalBtn'); if(rb) rb.disabled = (losResults.length === 0);
+  const cb = document.getElementById('losCsvBtn'); if(cb) cb.disabled = (losResults.length === 0);
+}
 function clearDayCache(items){
   const qc = quoteCache();
   items.forEach(it => { delete qc[it.name]; if(it.ticker) delete qc['tk:'+it.ticker]; });
@@ -2186,6 +2215,8 @@ loadUiPrefs();
 updateScanHint();
 updateLosHint();
 updateWlCount();
+loadEbLast();    // F3: arată instant ultimul scan Early Bird (re-scanează pt date proaspete)
+loadLosLast();   // F3: idem Top Losers
 
 // ── toast ──
 function showToast(msg){
