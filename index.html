@@ -747,7 +747,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.8</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.9</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -2174,11 +2174,15 @@ function losCompareAi(){
 const WL_KEY = 'salt_watchlist';
 let watchlist = [];
 try { watchlist = JSON.parse(localStorage.getItem(WL_KEY) || '[]'); } catch(e){ watchlist = []; }
-let wlData = {};          // key → {ticker, m}
+let wlData = {};          // key → {ticker, m, closes, live}
 let wlSelected = new Set();
 let wlFilter = 'all';
 
 function wlSave(){ localStorage.setItem(WL_KEY, JSON.stringify(watchlist)); }
+// P-A: persistă datele watchlist (prețuri/verdicte) → render instant la reload
+function saveWlData(){ try { localStorage.setItem('salt_wl_data', JSON.stringify({ ts:Date.now(), data:wlData })); } catch(e){} }
+function loadWlData(){ try { const s = JSON.parse(localStorage.getItem('salt_wl_data') || 'null'); if(s && s.data) wlData = s.data; } catch(e){} }
+loadWlData();   // la init, înainte de primul wlRender
 function wlHas(key){ return watchlist.some(w => w.key === key); }
 // add a Salt instrument; returns true if newly added. silent skips toast.
 function wlAddInstrument(item, silent){
@@ -2288,7 +2292,7 @@ function wlRender(){
     const main = `<tr class="wl-row ${sel?'row-sel':''} ${rev?'row-rev':''}" onclick="wlRowClick(event,'${kq}')">
       <td onclick="event.stopPropagation()"><input type="checkbox" ${sel?'checked':''} onclick="wlToggleSel('${kq}')"></td>
       ${vcell}${scell}
-      <td class="name">${escapeHtml(w.name)}${rev?' <span class="wl-fav">🌱</span>':''}<div style="font-size:10px;color:var(--text-dim)">${escapeHtml(w.ticker||'—')} · ${escapeHtml(w.jurisdiction||'—')}</div></td>
+      <td class="name">${escapeHtml(w.name)}${rev?' <span class="wl-fav">🌱</span>':''}${m && m.volRatio>=2 ? ` <span title="RVOL ${m.volRatio.toFixed(1)}× — volum ridicat" style="font-size:10px">🔥</span>` : ''}<div style="font-size:10px;color:var(--text-dim)">${escapeHtml(w.ticker||'—')} · ${escapeHtml(w.jurisdiction||'—')}</div></td>
       ${ m ? `<td style="text-align:right">$${px.toFixed(2)} ${sessBadge}</td>` : '<td style="text-align:right;color:var(--text-dim)">–</td>' }
       ${cell(m?((m.chg>=0?'+':'')+m.chg.toFixed(2)+'%'):'', m?(m.chg>=0?'pos':'neg'):'')}
       ${cell(m?m.rsi.toFixed(0):'')}
@@ -2393,6 +2397,7 @@ async function wlRefresh(force){
   wlRender();
   wlCheckVerdictChanges();   // W4: toast la îmbunătățire de verdict
   wlCheckAlerts();           // W5: verifică pragurile de preț
+  saveWlData();              // P-A: persistă pt render instant la reload
   flushQuoteCache();   // PERF: scrie cache-ul o singură dată la final
 }
 // ── W5: alerte preț pe watchlist (prag cu direcție auto) ──
