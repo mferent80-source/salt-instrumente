@@ -713,7 +713,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.0</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.1</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -1191,8 +1191,23 @@ function saveSymCache(c){ localStorage.setItem('salt_ysym_cache', JSON.stringify
 // daily price cache (v2: stores {closes, volumes}, keyed by name — ISIN unreliable)
 // data în ORA ROMÂNIEI (nu UTC) — cache-ul zilei se reînnoiește corect la miezul nopții local, nu la 02:00-03:00
 function todayKey(){ return 'salt_eb2_'+new Date().toLocaleDateString('en-CA', { timeZone:'Europe/Bucharest' }); }
-function quoteCache(){ try { return JSON.parse(localStorage.getItem(todayKey())||'{}'); } catch(e){ return {}; } }
-function saveQuoteCache(c){ localStorage.setItem(todayKey(), JSON.stringify(c)); }
+// PERF: cache in-memory partajat (un SINGUR obiect mutat de toți runner-ii) → elimină
+//   (a) race-ul din pool-ul paralel (citire snapshot înainte de await, scriere după = intrări pierdute)
+//   (b) JSON.parse/stringify pe tot cache-ul la FIECARE simbol. Scrierea în localStorage e throttled.
+let _qcMem = null, _qcKey = '', _qcFlushTimer = null;
+function quoteCache(){
+  const k = todayKey();
+  if(_qcMem === null || _qcKey !== k){   // reîncarcă dacă s-a schimbat ziua (pagină deschisă peste noapte)
+    _qcKey = k;
+    try { _qcMem = JSON.parse(localStorage.getItem(k) || '{}'); } catch(e){ _qcMem = {}; }
+  }
+  return _qcMem;
+}
+function saveQuoteCache(c){ if(c) _qcMem = c; if(!_qcFlushTimer) _qcFlushTimer = setTimeout(flushQuoteCache, 1200); }
+function flushQuoteCache(){
+  if(_qcFlushTimer){ clearTimeout(_qcFlushTimer); _qcFlushTimer = null; }
+  try { localStorage.setItem(_qcKey || todayKey(), JSON.stringify(_qcMem || {})); } catch(e){}
+}
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -1496,15 +1511,20 @@ async function startEarlyScan(force){
 
   // concurrency pool — POOL runners drain a shared queue
   const queue = subset.slice();
+  let lastRender = 0;   // PERF: throttle re-randarea grilei (grea: map + SVG-uri) la ~250ms în loop
   async function runner(){
     while(queue.length){
       const item = queue.shift();
       setProgress(done/subset.length*100, `${item.name}…`);
       try { await work(item); } catch(e){ failed.push({...item, reason:'eroare: '+(e&&e.message||e)}); }
       done++;
-      setProgress(done/subset.length*100, `${done}/${subset.length} analizate`);
-      ebAllScored = scored.slice().sort((a,b)=>b.score-a.score);
-      renderEarlyBird(curTop(scored), scored, failed);
+      setProgress(done/subset.length*100, `${done}/${subset.length} analizate`);   // ieftin → rămâne la fiecare item
+      const nowMs = Date.now();
+      if(nowMs - lastRender > 250){
+        lastRender = nowMs;
+        ebAllScored = scored.slice().sort((a,b)=>b.score-a.score);
+        renderEarlyBird(curTop(scored), scored, failed);
+      }
     }
   }
   await Promise.all(Array.from({length: Math.min(POOL, subset.length)}, runner));
@@ -1515,6 +1535,7 @@ async function startEarlyScan(force){
   ebLastScan = new Date().toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'});
   renderEarlyBird(ebResults, scored, failed);
   saveEbLast();   // F3: persistă pt render instant la reload
+  flushQuoteCache();   // PERF: scrie cache-ul o singură dată la final (nu la fiecare item)
 
   pw.classList.remove('active');
   btn.disabled = false; btn.textContent = '⚡ Scanează momentum';
@@ -1927,6 +1948,7 @@ async function startLoserScan(force){
   losLastScan = new Date().toLocaleTimeString('ro-RO', {hour:'2-digit', minute:'2-digit'});
   renderLosers();
   saveLosLast();   // F3: persistă pt render instant la reload
+  flushQuoteCache();   // PERF: scrie cache-ul o singură dată la final
 
   pw.classList.remove('active');
   btn.disabled = false; btn.textContent = '🔻 Scanează losers';
@@ -2180,6 +2202,7 @@ async function wlRefresh(force){
   if(btn){ btn.disabled = false; btn.textContent = '↻ Actualizează prețuri'; }
   wlRefreshing = false;
   wlRender();
+  flushQuoteCache();   // PERF: scrie cache-ul o singură dată la final
 }
 function wlToggleSel(key){
   if(wlSelected.has(key)) wlSelected.delete(key); else wlSelected.add(key);
