@@ -732,6 +732,20 @@ td.isin {
 .wl-sub b.neg, .wl-sub .neg { color: var(--accent); }
 .wl-sub.row-sel td { background: var(--accent-dim); }
 @media (max-width: 600px){ .wl-sub td { white-space: normal; line-height: 1.7; } }
+/* ── COSMETIZARE „terminal dens" extinsă: Top Losers + Lista completă ── */
+#losTable, #instruments-table { font-variant-numeric: tabular-nums; }
+#losTable td, #instruments-table td { padding: 6px 10px; }
+#losTable th, #instruments-table th { padding: 9px 10px; }
+#losTable td.name, #instruments-table td.name { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em; }
+#losTable tbody tr:hover, #instruments-table tbody tr:hover { background: rgba(255,255,255,.025); }
+/* Early Bird carduri — densificare (mai compacte, mai multe pe rând) */
+.eb-grid { grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 10px; }
+.eb-card { font-variant-numeric: tabular-nums; }
+.eb-body { padding: 11px 13px; }
+.eb-head { margin-bottom: 8px; }
+.eb-metrics { gap: 6px; margin-bottom: 8px; }
+.eb-metric { padding: 6px 8px; }
+.eb-spark { height: 30px; margin-bottom: 8px; }
 #wlTable .wl-row { cursor: pointer; }
 #wlTable .wl-row:hover td { background: rgba(255,255,255,.03); }
 .wl-detail td { background: var(--bg-soft); padding: 12px 14px !important; }
@@ -764,7 +778,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.17</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.18</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
