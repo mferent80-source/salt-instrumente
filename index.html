@@ -751,7 +751,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.14</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.15</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -2225,6 +2225,46 @@ function _addAllToWl(list, what){
 }
 function ebAddAllToWl(){ _addAllToWl(ebResults, 'Early Bird'); }
 function losAddAllToWl(){ _addAllToWl(losResults, 'Losers'); }
+// P-G: mini-chart (modal) la click pe sparkline — linie preț + MA50/MA200
+function buildBigChart(closes, w, h){
+  const n = closes.length; if(n < 2) return '';
+  const min = Math.min(...closes), max = Math.max(...closes), rng = (max - min) || 1;
+  const X = i => i/(n-1)*w, Y = v => h - ((v - min)/rng)*h;
+  const path = closes.map((c, i) => `${i===0?'M':'L'}${X(i).toFixed(1)},${Y(c).toFixed(1)}`).join(' ');
+  const maLine = (period, col) => {
+    if(n < period) return '';
+    const pts = [];
+    for(let i = period-1; i < n; i++){ const s = closes.slice(i-period+1, i+1).reduce((a, b) => a+b, 0)/period; pts.push(`${i===period-1?'M':'L'}${X(i).toFixed(1)},${Y(s).toFixed(1)}`); }
+    return `<path d="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="1.2" opacity="0.85"/>`;
+  };
+  const up = closes[n-1] >= closes[0];
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="width:100%;height:auto;background:var(--bg-soft);border-radius:8px">
+    <path d="${path}" fill="none" stroke="${up?'var(--green)':'var(--accent)'}" stroke-width="1.6"/>
+    ${maLine(50, '#5bb0ff')}${maLine(200, '#f59e0b')}
+  </svg>`;
+}
+function ensureChartModal(){
+  if(document.getElementById('chartOverlay')) return;
+  const ov = document.createElement('div'); ov.className = 'sizer-overlay'; ov.id = 'chartOverlay';
+  ov.innerHTML = `<div class="sizer-modal" style="max-width:640px" onclick="event.stopPropagation()">
+    <h3 id="chartTitle"></h3><div class="sz-name" id="chartSub"></div>
+    <div id="chartBody"></div>
+    <button class="sizer-close" onclick="closeChart()">Închide</button></div>`;
+  ov.addEventListener('click', e => { if(e.target === ov) closeChart(); });
+  document.body.appendChild(ov);
+}
+function openChart(key){
+  const d = wlData[key]; if(!d || !d.closes || d.closes.length < 2){ showToast('Fără date pentru chart'); return; }
+  const w = watchlist.find(x => x.key === key);
+  ensureChartModal();
+  const last = d.m ? d.m.last : d.closes[d.closes.length-1];
+  document.getElementById('chartTitle').textContent = w ? w.name : '';
+  document.getElementById('chartSub').textContent = `${(w && w.ticker) || ''} · ${d.closes.length} bare · $${last.toFixed(2)}`;
+  document.getElementById('chartBody').innerHTML = buildBigChart(d.closes, 600, 240)
+    + `<div style="display:flex;gap:16px;margin-top:8px;font-size:11px;font-family:'DM Mono',monospace"><span style="color:#5bb0ff">— MA50</span><span style="color:#f59e0b">— MA200</span></div>`;
+  document.getElementById('chartOverlay').classList.add('show');
+}
+function closeChart(){ const o = document.getElementById('chartOverlay'); if(o) o.classList.remove('show'); }
 function wlAddManual(){
   const inp = document.getElementById('wlInput');
   const q = (inp.value||'').trim();
@@ -2389,7 +2429,7 @@ function wlRender(){
       ${ m ? `<td style="text-align:right">$${px.toFixed(2)} ${sessBadge}</td>` : '<td style="text-align:right;color:var(--text-dim)">–</td>' }
       ${cell(m?((m.chg>=0?'+':'')+m.chg.toFixed(2)+'%'):'', m?(m.chg>=0?'pos':'neg'):'')}
       ${cell(m?m.rsi.toFixed(0):'')}
-      <td class="wl-spark">${ (m && d.closes && d.closes.length > 1) ? sparkline(d.closes.slice(-wlSparkDays)) : '<span style="color:var(--text-dim)">–</span>' }</td>
+      <td class="wl-spark" ${(m && d.closes && d.closes.length > 1) ? `onclick="event.stopPropagation();openChart('${kq}')" style="cursor:pointer" title="Chart mărit"` : ''}>${ (m && d.closes && d.closes.length > 1) ? sparkline(d.closes.slice(-wlSparkDays)) : '<span style="color:var(--text-dim)">–</span>' }</td>
       <td style="text-align:right;white-space:nowrap" onclick="event.stopPropagation()"><button class="btn-row ${(wlAlerts[w.key]&&wlAlerts[w.key].armed)?'added':''}" title="Alertă preț" onclick="wlSetAlert('${kq}')">🔔</button> <button class="btn-row" title="Scoate din watchlist" onclick="wlRemove('${kq}')">✕</button></td>
     </tr>`;
     let detail = '';
