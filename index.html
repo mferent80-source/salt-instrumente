@@ -751,7 +751,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.15</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.16</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -1009,7 +1009,7 @@ td.isin {
     <div class="scan-controls">
       <input type="text" id="wlInput" class="search-input" style="min-width:200px;flex:0 1 320px" placeholder="Adaugă: ticker (ex. RHM.DE) sau nume din listă..." onkeydown="if(event.key==='Enter')wlAddManual()">
       <button class="scan-btn" onclick="wlAddManual()">+ Adaugă</button>
-      <button class="ai-btn" id="wlRefreshBtn" onclick="wlRefresh()">↻ Actualizează prețuri</button>
+      <button class="ai-btn" id="wlRefreshBtn" onclick="wlRefresh(true)">↻ Actualizează prețuri</button>
       <button class="ai-btn" id="wlCompareBtn" onclick="wlCompareAi()" disabled style="border-color:var(--purple);color:var(--purple)">🧠 Compară AI</button>
       <button class="ai-btn" id="wlAutoBtn" onclick="wlToggleAuto()">⏱️ Auto: OFF</button>
       <button class="ai-btn" onclick="exportWlCsv()" style="border-color:var(--green);color:var(--green)">⬇ CSV</button>
@@ -1406,7 +1406,9 @@ async function fetchSeries(symbol){
     lows.push(q.low && q.low[i] != null ? q.low[i] : q.close[i]);
   }
   if(closes.length < 8) return { error: 'prea puține bare' };
-  return { closes, volumes, highs, lows };
+  // regClose = prețul de AZI (live din meta), partial = am exclus bara de azi (sesiune deschisă)
+  // → permite variația de AZI pt afișare, separat de barele închise (scoring stabil)
+  return { closes, volumes, highs, lows, regClose: (meta.regularMarketPrice != null ? meta.regularMarketPrice : null), partial: !!sessionOpen };
 }
 
 // ── indicators ──
@@ -1436,10 +1438,13 @@ function atr14(closes, highs, lows){
   const k = Math.min(14, trs.length);
   return trs.slice(-k).reduce((a, b) => a + b, 0) / k;
 }
-function indicators(closes, volumes, highs, lows){
+function indicators(closes, volumes, highs, lows, meta){
   const n = closes.length;
   const last = closes[n-1], prev = closes[n-2];
   const chg = prev ? (last-prev)/prev*100 : 0;
+  // chgToday = variația de AZI pt AFIȘARE: dacă bara de azi e exclusă (sesiune deschisă),
+  // = preț azi (regClose) vs ultima închidere; altfel (după închidere) = chg (azi vs ieri)
+  const chgToday = (meta && meta.partial && meta.regClose) ? (meta.regClose - last)/last*100 : chg;
   const c7 = closes[Math.max(0,n-8)], c3 = closes[Math.max(0,n-4)];
   const w7 = c7 ? (last-c7)/c7*100 : 0;
   const w3 = c3 ? (last-c3)/c3*100 : 0;
@@ -1457,7 +1462,7 @@ function indicators(closes, volumes, highs, lows){
     const avg = mean(prior);
     if(avg > 0) volRatio = volumes[volumes.length-1] / avg;
   }
-  return { chg, rsi: rsi14(closes.slice(-30)), w7, w3, w14, w30, last, hi, lo, pos, volRatio, atr: atr14(closes, highs, lows) };
+  return { chg, chgToday, rsi: rsi14(closes.slice(-30)), w7, w3, w14, w30, last, hi, lo, pos, volRatio, atr: atr14(closes, highs, lows) };
 }
 // Entry/SL/TP din ATR pentru un setup LONG (Entry = ultimul close, SL = 1.5×ATR sub, TP = 1R/2R/3R)
 function calcLevels(m){
@@ -1557,10 +1562,10 @@ async function startEarlyScan(force){
     if(!data || !data.closes){
       const out = await fetchSeries(r.symbol);
       if(out.error){ failed.push({...item, reason:out.error, ticker:r.symbol}); return; }
-      data = { closes: out.closes, volumes: out.volumes, highs: out.highs, lows: out.lows };
+      data = { closes: out.closes, volumes: out.volumes, highs: out.highs, lows: out.lows, regClose: out.regClose, partial: out.partial };
       qc[item.name] = data; saveQuoteCache(qc);
     }
-    const m = indicators(data.closes, data.volumes, data.highs, data.lows);
+    const m = indicators(data.closes, data.volumes, data.highs, data.lows, { regClose: data.regClose, partial: data.partial });
     const score = calcEarlyBirdScore(m);
     scored.push({ ...item, ticker:r.symbol, exch:r.exch, m, score, closes:data.closes });
   }
@@ -1678,7 +1683,7 @@ function renderEarlyBird(top, all, failed, aborted){
         <span class="eb-badge ${st.cls}">${st.txt}</span>
         <div class="eb-spark">${sparkline(x.closes.slice(-14))}</div>
         <div class="eb-metrics">
-          <div class="eb-metric"><div class="eb-metric-lbl">Zi</div><div class="eb-metric-val" style="color:${x.m.chg>=0?'var(--green)':'var(--accent)'}">${x.m.chg>=0?'+':''}${x.m.chg.toFixed(2)}%</div></div>
+          <div class="eb-metric"><div class="eb-metric-lbl">Zi</div><div class="eb-metric-val" style="color:${(x.m.chgToday!=null?x.m.chgToday:x.m.chg)>=0?'var(--green)':'var(--accent)'}">${(x.m.chgToday!=null?x.m.chgToday:x.m.chg)>=0?'+':''}${(x.m.chgToday!=null?x.m.chgToday:x.m.chg).toFixed(2)}%</div></div>
           <div class="eb-metric"><div class="eb-metric-lbl">RSI</div><div class="eb-metric-val">${x.m.rsi.toFixed(0)}</div></div>
           <div class="eb-metric"><div class="eb-metric-lbl">3z/7z</div><div class="eb-metric-val">${x.m.w3>=0?'+':''}${x.m.w3.toFixed(1)}/${x.m.w7>=0?'+':''}${x.m.w7.toFixed(1)}</div></div>
           <div class="eb-metric"><div class="eb-metric-lbl">Volum</div><div class="eb-metric-val" style="color:${x.m.volRatio>=1.3?'var(--green)':'var(--text)'}">${(x.m.volRatio||0).toFixed(1)}×</div></div>
@@ -1773,10 +1778,10 @@ async function metricsFor(item){
   if(!data || !data.closes){
     const out = await fetchSeries(ticker);
     if(out.error) return { error: out.error, ticker };
-    data = { closes: out.closes, volumes: out.volumes, highs: out.highs, lows: out.lows };
+    data = { closes: out.closes, volumes: out.volumes, highs: out.highs, lows: out.lows, regClose: out.regClose, partial: out.partial };
     qc[cacheKey] = data; saveQuoteCache(qc);
   }
-  return { ticker, m: indicators(data.closes, data.volumes, data.highs, data.lows), closes: data.closes };
+  return { ticker, m: indicators(data.closes, data.volumes, data.highs, data.lows, { regClose: data.regClose, partial: data.partial }), closes: data.closes };
 }
 // ── AI INLINE (Claude API direct din browser, cheie partajată 'anthropic_api_key' ca în suita premarket) ──
 const AIKEY = 'anthropic_api_key';
@@ -1947,7 +1952,7 @@ function losSetMode(m){
   if(losResults.length) renderLosers();
   saveUiPrefs();
 }
-function losDrop(x){ return losMode==='day' ? x.m.chg : x.m[losMode]; }   // negative = drop; losMode: day|w7|w14|w30
+function losDrop(x){ return losMode==='day' ? (x.m.chgToday != null ? x.m.chgToday : x.m.chg) : x.m[losMode]; }   // day = variația de AZI
 function isReversal(m){ return m.w3 > 0 && m.w7 < 0; }
 // F4: Reversal Score 0-100 — cât de probabil e un rebound (nu doar flag binar)
 function reversalScore(m){
@@ -2131,7 +2136,7 @@ function renderLosers(){
       <td class="name">${escapeHtml(x.name)}${rev?' <span title="se întoarce în sus" class="wl-fav">🌱</span>':''}</td>
       <td>${escapeHtml(x.ticker)}</td>
       <td>${escapeHtml(x.jurisdiction)}</td>
-      ${losCell(x,'day',x.m.chg)}
+      ${losCell(x,'day',(x.m.chgToday != null ? x.m.chgToday : x.m.chg))}
       ${losCell(x,'w7',x.m.w7)}
       ${losCell(x,'w14',x.m.w14)}
       ${losCell(x,'w30',x.m.w30)}
@@ -2299,9 +2304,10 @@ document.querySelectorAll('#view-watchlist .chip').forEach(chip => {
 function wlPass(key){
   const d = wlData[key]; if(!d) return wlFilter === 'all';
   const m = d.m;
-  if(wlFilter==='gainers') return m.chg > 0;
-  if(wlFilter==='losers')  return m.chg < 0;
-  if(wlFilter==='movers')  return Math.abs(m.chg) >= 3;
+  const c = m.chgToday != null ? m.chgToday : m.chg;   // variația de azi
+  if(wlFilter==='gainers') return c > 0;
+  if(wlFilter==='losers')  return c < 0;
+  if(wlFilter==='movers')  return Math.abs(c) >= 3;
   if(wlFilter==='early')   return isReversal(m) || (m.chg>=0.3 && m.chg<=2.5 && m.rsi>=42 && m.rsi<=60);
   return true;
 }
@@ -2349,7 +2355,7 @@ function wlSortVal(w){
   switch(wlSort.col){
     case 'score': return sc ? sc.score : -1;
     case 'price': return m ? (d.live ? d.live.last : m.last) : -1;
-    case 'chg':   return m ? m.chg : -999;
+    case 'chg':   return m ? (m.chgToday != null ? m.chgToday : m.chg) : -999;
     case 'rsi':   return m ? m.rsi : -1;
     case 'name':  return (w.name || '').toLowerCase();
     default: return 0;
@@ -2419,6 +2425,7 @@ function wlRender(){
     const SESSLBL = { pre:'PRE', rth:'RTH', after:'AFT', closed:'CLS', eu:'EU' };
     const sessBadge = sess ? `<span class="wl-sess ${sess}">${SESSLBL[sess]}</span>` : '';
     const px = (d && d.live) ? d.live.last : (m ? m.last : null);   // preț live extended dacă există
+    const chgD = m ? (m.chgToday != null ? m.chgToday : m.chg) : 0;   // variația de AZI (nu ultima zi închisă)
     const cell = (v, cls) => m ? `<td style="text-align:right" class="${cls||''}">${v}</td>` : `<td style="text-align:right;color:var(--text-dim)">–</td>`;
     const vcell = sc ? `<td><span class="verdict ${sc.verdict}">${sc.vtxt}</span></td>` : `<td><span class="verdict hold">–</span></td>`;
     const scell = sc ? `<td style="text-align:right;font-weight:800">${sc.score}</td>` : `<td style="text-align:right;color:var(--text-dim)">–</td>`;
@@ -2427,7 +2434,7 @@ function wlRender(){
       ${vcell}${scell}
       <td class="name">${escapeHtml(w.name)}${rev?' <span class="wl-fav">🌱</span>':''}${m && m.volRatio>=2 ? ` <span title="RVOL ${m.volRatio.toFixed(1)}× — volum ridicat" style="font-size:10px">🔥</span>` : ''}<div style="font-size:10px;color:var(--text-dim)">${escapeHtml(w.ticker||'—')} · ${escapeHtml(w.jurisdiction||'—')}</div></td>
       ${ m ? `<td style="text-align:right">$${px.toFixed(2)} ${sessBadge}</td>` : '<td style="text-align:right;color:var(--text-dim)">–</td>' }
-      ${cell(m?((m.chg>=0?'+':'')+m.chg.toFixed(2)+'%'):'', m?(m.chg>=0?'pos':'neg'):'')}
+      ${cell(m?((chgD>=0?'+':'')+chgD.toFixed(2)+'%'):'', m?(chgD>=0?'pos':'neg'):'')}
       ${cell(m?m.rsi.toFixed(0):'')}
       <td class="wl-spark" ${(m && d.closes && d.closes.length > 1) ? `onclick="event.stopPropagation();openChart('${kq}')" style="cursor:pointer" title="Chart mărit"` : ''}>${ (m && d.closes && d.closes.length > 1) ? sparkline(d.closes.slice(-wlSparkDays)) : '<span style="color:var(--text-dim)">–</span>' }</td>
       <td style="text-align:right;white-space:nowrap" onclick="event.stopPropagation()"><button class="btn-row ${(wlAlerts[w.key]&&wlAlerts[w.key].armed)?'added':''}" title="Alertă preț" onclick="wlSetAlert('${kq}')">🔔</button> <button class="btn-row" title="Scoate din watchlist" onclick="wlRemove('${kq}')">✕</button></td>
@@ -2509,6 +2516,7 @@ async function wlRefresh(force){
   const btn = document.getElementById('wlRefreshBtn');
   if(btn){ btn.disabled = true; btn.textContent = '⏳ ...'; }
   await ensureWlBench();   // W1: SPY pt Beta
+  if(force) clearDayCache(watchlist);   // date proaspete (regClose pt variația de AZI), nu cache vechi
   const queue = watchlist.filter(w => force || !wlData[w.key]).slice();
   async function runner(){
     while(queue.length){
