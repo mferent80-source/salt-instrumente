@@ -712,6 +712,25 @@ td.isin {
 .risk-badge.mod { background: rgba(132,204,22,.13); border-color: rgba(132,204,22,.45); color: #84cc16; }
 .risk-badge.neu { background: rgba(245,158,11,.14); border-color: rgba(245,158,11,.45); color: #f59e0b; }
 .risk-badge.off { background: rgba(239,68,68,.15);  border-color: rgba(239,68,68,.5);  color: var(--accent); }
+/* ── W1: Watchlist scoring 5-tier + verdict + rând detaliu expandabil ── */
+.verdict { display: inline-block; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 5px; white-space: nowrap; }
+.verdict.strong-buy { background: rgba(34,197,94,.20); color: var(--green); }
+.verdict.buy        { background: rgba(34,197,94,.10); color: var(--green); }
+.verdict.hold       { background: var(--bg-soft); color: var(--text-dim); }
+.verdict.sell       { background: rgba(239,68,68,.10); color: var(--accent); }
+.verdict.strong-sell{ background: rgba(239,68,68,.20); color: var(--accent); }
+#wlTable .wl-row { cursor: pointer; }
+#wlTable .wl-row:hover td { background: rgba(255,255,255,.03); }
+.wl-detail td { background: var(--bg-soft); padding: 12px 14px !important; }
+.wl-dm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.wl-dm { display: flex; flex-direction: column; gap: 2px; }
+.wl-dm span { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; }
+.wl-dm b { font-size: 13px; color: var(--text); font-family: 'DM Mono', monospace; }
+.wl-bd-title { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+.wl-bd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 2px 14px; }
+.wl-bd { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-family: 'DM Mono', monospace; border-bottom: 1px solid var(--border); padding: 2px 0; }
+.wl-bd b.pos { color: var(--green); }
+.wl-bd b.neg { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -720,7 +739,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.3</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.4</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -993,6 +1012,7 @@ td.isin {
 
     <div class="results-info">
       <div>În watchlist: <span class="results-count" id="wlCount">0</span></div>
+      <div id="wlStats" style="font-family:'DM Mono',monospace;font-size:12px"></div>
       <div id="wlSummary"></div>
     </div>
 
@@ -1000,9 +1020,10 @@ td.isin {
       <table id="wlTable">
         <thead><tr>
           <th style="cursor:default"><input type="checkbox" id="wlCheckAll" onclick="wlToggleAll(this.checked)" title="Selectează tot"></th>
-          <th>Nume</th><th>Ticker</th><th>Țară</th>
+          <th>Verdict</th><th style="text-align:right" title="Scor 0-100">Scor</th>
+          <th>Nume</th>
           <th style="text-align:right">Preț</th><th style="text-align:right">Δ Zi</th>
-          <th style="text-align:right">Δ 7z</th><th style="text-align:right">RSI</th><th></th>
+          <th style="text-align:right">RSI</th><th></th>
         </tr></thead>
         <tbody id="wlResults"></tbody>
       </table>
@@ -1916,6 +1937,56 @@ function reversalScore(m){
   return Math.max(0, Math.min(100, Math.round(s)));
 }
 
+// ── W1: scoring 5-tier (STRONG BUY → AVOID) ca în watchlist-monitor (premarket), Yahoo-only ──
+function calcMA(closes, period){
+  if(!closes || closes.length < period) return null;
+  return closes.slice(-period).reduce((a, b) => a + b, 0) / period;
+}
+function calcBeta(closes, bench, n = 120){
+  if(!closes || !bench || closes.length < 30 || bench.length < 30) return null;
+  const m = Math.min(closes.length, bench.length, n + 1);
+  const s = closes.slice(-m), b = bench.slice(-m), rs = [], rb = [];
+  for(let i = 1; i < m; i++){ if(s[i-1] && b[i-1]){ rs.push(s[i]/s[i-1]-1); rb.push(b[i]/b[i-1]-1); } }
+  if(rs.length < 20) return null;
+  const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+  const ms = mean(rs), mb = mean(rb);
+  let cov = 0, varb = 0;
+  for(let i = 0; i < rs.length; i++){ cov += (rs[i]-ms)*(rb[i]-mb); varb += (rb[i]-mb)*(rb[i]-mb); }
+  return varb ? cov/varb : null;
+}
+// scor + verdict din MA50/MA200 + RSI + momentum zi + volum direcțional (+ beta vs SPY informativ)
+function wlScore(closes, m, bench){
+  if(!m || !closes) return { score:0, verdict:'hold', vtxt:'⚠️ NO DATA', breakdown:[] };
+  const price = m.last, ma50 = calcMA(closes, 50), ma200 = calcMA(closes, 200);
+  const aMa50 = ma50 ? (price-ma50)/ma50*100 : null, aMa200 = ma200 ? (price-ma200)/ma200*100 : null;
+  const bd = [{ l:'Bază', p:50 }]; let score = 50;
+  if(aMa50 != null){ const p = aMa50>=5?12:aMa50>=0?6:aMa50>=-5?-5:-12; score += p; bd.push({ l:`Preț vs MA50 (${aMa50>=0?'+':''}${aMa50.toFixed(1)}%)`, p }); }
+  if(aMa200 != null){ const p = aMa200>=10?18:aMa200>=0?9:aMa200>=-10?-8:-18; score += p; bd.push({ l:`Preț vs MA200 (${aMa200>=0?'+':''}${aMa200.toFixed(1)}%)`, p }); }
+  if(ma50 && ma200){ const p = ma50>ma200?6:-6; score += p; bd.push({ l: ma50>ma200?'Golden cross (MA50>MA200)':'Death cross (MA50<MA200)', p }); }
+  { const r = m.rsi; let p = 0, l = `RSI ${r.toFixed(0)} — neutru`;
+    if(r>=40&&r<=65){ p=10; l=`RSI ${r.toFixed(0)} — sweet spot`; }
+    else if(r>65&&r<=75){ p=3; l=`RSI ${r.toFixed(0)} — momentum`; }
+    else if(r>75){ p=-8; l=`RSI ${r.toFixed(0)} — supracumpărat`; }
+    else if(r<30){ p=4; l=`RSI ${r.toFixed(0)} — bounce posibil`; }
+    else if(r<40){ p=-3; l=`RSI ${r.toFixed(0)} — slab`; }
+    score += p; if(p) bd.push({ l, p }); }
+  { const c = m.chg; let p = 0; if(c>=2)p=5; else if(c>=0)p=2; else if(c<=-3)p=-5; else if(c<0)p=-2; score += p; if(p) bd.push({ l:`Mișcare zi (${c>=0?'+':''}${c.toFixed(2)}%)`, p }); }
+  { const v = m.volRatio||1, c = m.chg; let p = 0, l = `Volum ${v.toFixed(1)}× — normal`;
+    if(v>=1.5&&c>=0){ p=v>=2?6:4; l=`Volum ${v.toFixed(1)}× pe creștere — acumulare`; }
+    else if(v>=1.5&&c<0){ p=v>=2?-6:-4; l=`Volum ${v.toFixed(1)}× pe scădere — distribuție`; }
+    else if(v<0.5){ p=-2; l=`Volum ${v.toFixed(1)}× — anemic`; }
+    score += p; if(p) bd.push({ l, p }); }
+  const beta = bench ? calcBeta(closes, bench) : null;
+  score = Math.max(0, Math.min(100, Math.round(score)));
+  let verdict, vtxt;
+  if(score>=75){ verdict='strong-buy'; vtxt='🚀 STRONG BUY'; }
+  else if(score>=60){ verdict='buy'; vtxt='📈 BUY'; }
+  else if(score>=40){ verdict='hold'; vtxt='📊 HOLD'; }
+  else if(score>=25){ verdict='sell'; vtxt='📉 SELL'; }
+  else { verdict='strong-sell'; vtxt='🔴 AVOID'; }
+  return { score, verdict, vtxt, ma50, ma200, aMa50, aMa200, beta, breakdown:bd };
+}
+
 async function startLoserScan(force){
   if(losScanning) return;
   const subset = losSubset().slice(0, SCAN_CAP);
@@ -2155,34 +2226,80 @@ function wlPass(key){
 function updateWlCount(){
   document.getElementById('wlTabCount').textContent = watchlist.length ? `(${watchlist.length})` : '';
 }
+// W1: scor cache-uit per rând (din closes + m + bench SPY)
+function wlScored(key){ const d = wlData[key]; return (d && d.m && d.closes) ? wlScore(d.closes, d.m, _wlBench) : null; }
+let wlExpanded = new Set();
+function wlToggleDetail(key){ if(wlExpanded.has(key)) wlExpanded.delete(key); else wlExpanded.add(key); wlRender(); }
+function wlRowClick(ev, key){ if(ev.target.closest('button, input, a')) return; wlToggleDetail(key); }
+function updateWlStats(){
+  const t = { 'strong-buy':0, 'buy':0, 'hold':0, 'sell':0, 'strong-sell':0 };
+  let scored = 0;
+  watchlist.forEach(w => { const sc = wlScored(w.key); if(sc){ t[sc.verdict]++; scored++; } });
+  const el = document.getElementById('wlStats');
+  if(el) el.innerHTML = scored ? `🚀${t['strong-buy']} 📈${t['buy']} 📊${t['hold']} 📉${t['sell']} 🔴${t['strong-sell']}` : '';
+}
 function wlRender(){
   updateWlCount();
   const rows = watchlist.filter(w => wlPass(w.key));
   document.getElementById('wlCount').textContent = watchlist.length;
   document.getElementById('wlSummary').textContent = wlFilter==='all' ? '' : `filtru: ${wlFilter} · ${rows.length} afișate`;
   const wrap = document.getElementById('wlTableWrap'), empty = document.getElementById('wlEmpty');
-  if(!watchlist.length){ wrap.style.display='none'; empty.style.display='block'; wlUpdateCmpBar(); return; }
+  if(!watchlist.length){ wrap.style.display='none'; empty.style.display='block'; wlUpdateCmpBar(); updateWlStats(); return; }
   wrap.style.display=''; empty.style.display='none';
   const tbody = document.getElementById('wlResults');
   tbody.innerHTML = rows.map(w => {
     const d = wlData[w.key], m = d && d.m;
+    const sc = wlScored(w.key);
     const sel = wlSelected.has(w.key);
     const rev = m && isReversal(m);
     const kq = w.key.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    const cell = (v, cls) => m ? `<td style="text-align:right" class="${cls||''}">${v}</td>` : `<td style="text-align:right;color:var(--text-faint)">–</td>`;
-    return `<tr class="${sel?'row-sel':''} ${rev?'row-rev':''}">
-      <td><input type="checkbox" ${sel?'checked':''} onclick="wlToggleSel('${kq}')"></td>
-      <td class="name">${escapeHtml(w.name)}${rev?' <span class="wl-fav">🌱</span>':''}</td>
-      <td>${escapeHtml(w.ticker||'—')}</td>
-      <td>${escapeHtml(w.jurisdiction||'—')}</td>
+    const cell = (v, cls) => m ? `<td style="text-align:right" class="${cls||''}">${v}</td>` : `<td style="text-align:right;color:var(--text-dim)">–</td>`;
+    const vcell = sc ? `<td><span class="verdict ${sc.verdict}">${sc.vtxt}</span></td>` : `<td><span class="verdict hold">–</span></td>`;
+    const scell = sc ? `<td style="text-align:right;font-weight:800">${sc.score}</td>` : `<td style="text-align:right;color:var(--text-dim)">–</td>`;
+    const main = `<tr class="wl-row ${sel?'row-sel':''} ${rev?'row-rev':''}" onclick="wlRowClick(event,'${kq}')">
+      <td onclick="event.stopPropagation()"><input type="checkbox" ${sel?'checked':''} onclick="wlToggleSel('${kq}')"></td>
+      ${vcell}${scell}
+      <td class="name">${escapeHtml(w.name)}${rev?' <span class="wl-fav">🌱</span>':''}<div style="font-size:10px;color:var(--text-dim)">${escapeHtml(w.ticker||'—')} · ${escapeHtml(w.jurisdiction||'—')}</div></td>
       ${cell(m?('$'+m.last.toFixed(2)):'')}
       ${cell(m?((m.chg>=0?'+':'')+m.chg.toFixed(2)+'%'):'', m?(m.chg>=0?'pos':'neg'):'')}
-      ${cell(m?((m.w7>=0?'+':'')+m.w7.toFixed(1)+'%'):'', m?(m.w7>=0?'pos':'neg'):'')}
       ${cell(m?m.rsi.toFixed(0):'')}
-      <td style="text-align:right"><button class="btn-row" title="Scoate din watchlist" onclick="wlRemove('${kq}')">✕</button></td>
+      <td style="text-align:right" onclick="event.stopPropagation()"><button class="btn-row" title="Scoate din watchlist" onclick="wlRemove('${kq}')">✕</button></td>
     </tr>`;
+    let detail = '';
+    if(wlExpanded.has(w.key) && sc && m){
+      const ma50s = sc.aMa50 != null ? `${sc.aMa50>=0?'+':''}${sc.aMa50.toFixed(1)}%` : '–';
+      const ma200s = sc.aMa200 != null ? `${sc.aMa200>=0?'+':''}${sc.aMa200.toFixed(1)}%` : '–';
+      const beta = sc.beta != null ? sc.beta.toFixed(2) : '–';
+      const dm = (l, v) => `<div class="wl-dm"><span>${l}</span><b>${v}</b></div>`;
+      const bdHtml = sc.breakdown.map(b => `<div class="wl-bd"><span>${escapeHtml(b.l)}</span><b class="${b.p>=0?'pos':'neg'}">${b.p>=0?'+':''}${b.p}</b></div>`).join('');
+      detail = `<tr class="wl-detail"><td colspan="8">
+        <div class="wl-dm-grid">
+          ${dm('vs MA50', ma50s)}${dm('vs MA200', ma200s)}${dm('β vs SPY', beta)}
+          ${dm('Δ 7z', (m.w7>=0?'+':'')+m.w7.toFixed(1)+'%')}${dm('Δ 30z', (m.w30>=0?'+':'')+m.w30.toFixed(1)+'%')}
+          ${dm('Volum', (m.volRatio||0).toFixed(1)+'×')}${dm('Poz 52s', (m.pos*100).toFixed(0)+'%')}${dm('ATR', (m.atr||0).toFixed(2))}
+        </div>
+        <div class="wl-bd-title">Cum s-a format scorul ${sc.score}/100:</div>
+        <div class="wl-bd-grid">${bdHtml}</div>
+        <div style="margin-top:10px">
+          <a class="btn-row" href="https://finance.yahoo.com/quote/${encodeURIComponent(w.ticker||'')}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none">📈 Yahoo</a>
+          <button class="btn-row" onclick="event.stopPropagation();openSizer(${m.last},${(m.last*0.95).toFixed(4)},'${encodeURIComponent(w.name)}')">💰 Sizing</button>
+        </div>
+      </td></tr>`;
+    }
+    return main + detail;
   }).join('');
-  wlUpdateCmpBar();
+  wlUpdateCmpBar(); updateWlStats();
+}
+// W1: benchmark SPY pentru Beta/α (cache 30 min)
+let _wlBench = null, _wlBenchTs = 0;
+async function ensureWlBench(){
+  if(_wlBench && Date.now() - _wlBenchTs < 30*60000) return _wlBench;
+  try {
+    const j = await proxiedJson(YH_CHART('SPY'));
+    const q = j && j.chart && j.chart.result && j.chart.result[0] && j.chart.result[0].indicators.quote[0];
+    if(q && q.close){ _wlBench = q.close.filter(v => v != null); _wlBenchTs = Date.now(); }
+  } catch(e){}
+  return _wlBench;
 }
 let wlRefreshing = false;
 async function wlRefresh(force){
@@ -2191,6 +2308,7 @@ async function wlRefresh(force){
   wlRefreshing = true;
   const btn = document.getElementById('wlRefreshBtn');
   if(btn){ btn.disabled = true; btn.textContent = '⏳ ...'; }
+  await ensureWlBench();   // W1: SPY pt Beta
   const queue = watchlist.filter(w => force || !wlData[w.key]).slice();
   async function runner(){
     while(queue.length){
@@ -2199,7 +2317,7 @@ async function wlRefresh(force){
         const res = await metricsFor(w.raw ? {raw:true, ticker:w.ticker} : w);
         if(!res.error){
           if(!w.ticker){ w.ticker = res.ticker; wlSave(); }
-          wlData[w.key] = { ticker: res.ticker, m: res.m };
+          wlData[w.key] = { ticker: res.ticker, m: res.m, closes: res.closes };   // W1: closes pt scoring/MA/beta
           wlRender();
         }
       } catch(e){}
