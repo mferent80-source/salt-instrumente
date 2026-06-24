@@ -676,6 +676,15 @@ td.isin {
 .cmp-bar .cmp-go { background: var(--purple); color: #000; }
 .cmp-bar .cmp-clear { background: var(--bg-soft); color: var(--text-dim); border: 1px solid var(--border); }
 .wl-fav { color: var(--green); }
+/* ── AI inline (verdict Claude în pagină, fade-in, fără streaming) ── */
+.ai-loading { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text-dim); padding: 6px 0; }
+.ai-md { font-size: 13.5px; line-height: 1.6; color: var(--text); }
+.ai-md h3 { font-size: 14px; margin: 10px 0 4px; color: var(--accent); }
+.ai-md h4 { font-size: 13px; margin: 8px 0 3px; color: var(--text); }
+.ai-md strong { color: var(--text); }
+.ai-fade { animation: aiFade 0.35s ease; }
+@keyframes aiFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.ai-keyform input { background: var(--bg-soft); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 12px; }
 </style>
 </head>
 <body>
@@ -687,6 +696,7 @@ td.isin {
       <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare</div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
       <button class="install-btn" id="pwaInstallBtn" onclick="installPWA()">📱 Instalează</button>
       <a class="source-link" href="https://salt.bank/storage/app/efsfiles/media/investitii/Lista%20intrumente%20disponibile%20pentru%20tranzactionare.pdf" target="_blank">
         [↗] PDF oficial Salt
@@ -1592,19 +1602,7 @@ function aiCompareEarly(){
   }
 
   const prompt = `${task}\n\n${sections.join('\n\n')}`;
-
-  const ta = document.createElement('textarea');
-  ta.value = prompt; ta.style.cssText = 'position:fixed;left:-9999px;opacity:0';
-  document.body.appendChild(ta); ta.focus(); ta.select();
-  let ok=false; try { ok = document.execCommand('copy'); } catch(e){}
-  document.body.removeChild(ta);
-
-  if(ok){
-    box.innerHTML = `<strong style="color:var(--green)">✓ Prompt copiat!</strong> Se deschide <a href="https://claude.ai/new" target="_blank">Claude.ai</a> — lipește (Ctrl+V) și trimite.`;
-    setTimeout(() => window.open('https://claude.ai/new','_blank'), 700);
-  } else {
-    box.innerHTML = `Copiază manual promptul:<textarea readonly>${escapeHtml(prompt)}</textarea>`;
-  }
+  runAiInline(prompt, 'aiResult');
 }
 
 updateScanHint();
@@ -1631,21 +1629,83 @@ async function metricsFor(item){
   }
   return { ticker, m: indicators(data.closes, data.volumes), closes: data.closes };
 }
-function copyToClaude(prompt, boxId){
-  const box = document.getElementById(boxId);
-  box.classList.add('active');
-  const ta = document.createElement('textarea');
-  ta.value = prompt; ta.style.cssText = 'position:fixed;left:-9999px;opacity:0';
-  document.body.appendChild(ta); ta.focus(); ta.select();
-  let ok=false; try { ok = document.execCommand('copy'); } catch(e){}
-  document.body.removeChild(ta);
-  if(ok){
-    box.innerHTML = `<strong style="color:var(--green)">✓ Prompt copiat!</strong> Se deschide <a href="https://claude.ai/new" target="_blank">Claude.ai</a> — lipește (Ctrl+V) și trimite.`;
-    setTimeout(() => window.open('https://claude.ai/new','_blank'), 700);
-  } else {
-    box.innerHTML = `Copiază manual promptul:<textarea readonly>${escapeHtml(prompt)}</textarea>`;
+// ── AI INLINE (Claude API direct din browser, cheie partajată 'anthropic_api_key' ca în suita premarket) ──
+const AIKEY = 'anthropic_api_key';
+function getAiKey(){ try { return localStorage.getItem(AIKEY) || ''; } catch(e){ return ''; } }
+function setAiKey(k){ try { localStorage.setItem(AIKEY, (k||'').trim()); } catch(e){} }
+function aiKeyPrompt(){
+  const k = prompt('Cheia Anthropic (sk-ant-…) — se salvează DOAR în acest browser:', getAiKey());
+  if(k !== null){ setAiKey(k); showToast(k.trim() ? '✅ Cheie AI salvată' : '🔑 Cheie ștearsă'); }
+}
+// apel non-streaming (Marius nu suportă streaming token-cu-token) + timeout 180s
+async function aiComplete(promptText){
+  const key = getAiKey();
+  if(!key) throw new Error('no-key');
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), 180000);
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-api-key':key,
+        'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:'claude-opus-4-8', max_tokens:1200, messages:[{ role:'user', content: promptText }] }),
+      signal: ctrl.signal
+    });
+    if(!resp.ok){ const j = await resp.json().catch(()=>({})); throw new Error((j.error && j.error.message) || ('HTTP '+resp.status)); }
+    const data = await resp.json();
+    return (data && data.content && data.content[0] && data.content[0].text) || '';
+  } catch(e){ throw (e.name==='AbortError' ? new Error('timeout AI — reîncearcă') : e); }
+  finally { clearTimeout(to); }
+}
+// markdown minimal → HTML (escape ÎNTÂI, apoi heading/bold/bullet)
+function aiMdToHtml(s){
+  return escapeHtml(s)
+    .replace(/^### (.*)$/gm, '<h4>$1</h4>')
+    .replace(/^## (.*)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/^[-*] (.*)$/gm, '• $1')
+    .replace(/\n/g, '<br>');
+}
+function __aiSaveRun(boxId){ const v = document.getElementById('aiKeyInput').value; if(v.trim()){ setAiKey(v); __aiRerun(boxId); } }
+function __aiRerun(boxId){ const b = document.getElementById(boxId); if(b && b.dataset.prompt) runAiInline(b.dataset.prompt, boxId); }
+function __aiCopy(boxId){
+  const b = document.getElementById(boxId), p = b && b.dataset.prompt; if(!p) return;
+  const ta = document.createElement('textarea'); ta.value = p; ta.style.cssText = 'position:fixed;left:-9999px';
+  document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} document.body.removeChild(ta);
+  showToast('✅ Prompt copiat'); setTimeout(() => window.open('https://claude.ai/new','_blank'), 500);
+}
+// rulează AI inline în box; fără cheie → mini-form (setează cheia SAU copiază manual)
+async function runAiInline(promptText, boxId){
+  const box = document.getElementById(boxId); if(!box) return;
+  box.classList.add('active'); box.dataset.prompt = promptText;
+  if(!getAiKey()){
+    box.innerHTML = `<div class="ai-keyform">
+      <div style="margin-bottom:8px">🔑 <strong>AI inline</strong> are nevoie de cheia ta Anthropic (sk-ant-…). Se salvează doar în acest browser.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <input type="password" id="aiKeyInput" placeholder="sk-ant-..." style="flex:1;min-width:180px">
+        <button class="ai-btn" onclick="__aiSaveRun('${boxId}')">Salvează și rulează</button>
+      </div>
+      <div style="margin-top:8px;font-size:11px;opacity:.7">sau <a href="javascript:void(0)" onclick="__aiCopy('${boxId}')">copiază promptul manual</a> pentru claude.ai</div>
+    </div>`;
+    return;
+  }
+  const t0 = Date.now();
+  box.innerHTML = `<div class="ai-loading">⏳ Claude analizează… <span id="${boxId}_t">0.0s</span></div>`;
+  const tEl = document.getElementById(boxId+'_t');
+  const timer = setInterval(() => { if(tEl) tEl.textContent = ((Date.now()-t0)/1000).toFixed(1)+'s'; }, 100);
+  try {
+    const txt = await aiComplete(promptText);
+    clearInterval(timer);
+    box.innerHTML = `<div class="ai-md ai-fade">${aiMdToHtml(txt)}</div>`
+      + `<div style="margin-top:8px;font-size:10.5px;opacity:.6">Claude Opus · ${((Date.now()-t0)/1000).toFixed(1)}s</div>`;
+  } catch(e){
+    clearInterval(timer);
+    box.innerHTML = `<div style="color:var(--accent)">⚠ ${escapeHtml(e.message||'eroare AI')}</div>`
+      + `<div style="margin-top:6px;font-size:11px"><a href="javascript:void(0)" onclick="__aiCopy('${boxId}')">copiază promptul manual</a> · <a href="javascript:void(0)" onclick="aiKeyPrompt()">schimbă cheia</a></div>`;
   }
 }
+// păstrat ca alias (losers + watchlist îl apelează) → acum rulează AI inline, nu mai copiază
+function copyToClaude(prompt, boxId){ runAiInline(prompt, boxId); }
 function metricLine(x){
   return `${x.name} (${x.ticker}, ${x.jurisdiction}): zi ${x.m.chg>=0?'+':''}${x.m.chg.toFixed(1)}%, 7z ${x.m.w7>=0?'+':''}${x.m.w7.toFixed(1)}%, 3z ${x.m.w3>=0?'+':''}${x.m.w3.toFixed(1)}%, RSI ${x.m.rsi.toFixed(0)}, vol ${(x.m.volRatio||0).toFixed(1)}×, poziție 52s ${(x.m.pos*100).toFixed(0)}%`;
 }
