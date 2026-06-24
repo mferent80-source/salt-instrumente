@@ -747,7 +747,7 @@ td.isin {
   <div class="header">
     <div class="title-wrap">
       <h1>SALT BANK<br><span class="accent">— Instrumente</span></h1>
-      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.7</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
+      <div class="subtitle">Lista oficială // 532 instrumente disponibile pentru tranzacționare <span class="ver-badge">v1.8</span> <span id="riskBadge" class="risk-badge loading" title="Regim de risc — se calculează…">🛡 …</span></div>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button class="install-btn" id="aiKeyBtn" onclick="aiKeyPrompt()" title="Setează/șterge cheia Anthropic pentru AI inline (se salvează doar în acest browser)">🔑 AI</button>
@@ -997,7 +997,7 @@ td.isin {
   <div class="view" id="view-watchlist">
 
     <div class="notice">
-      <strong>👁️ Watchlist.</strong> Adaugă instrumente din orice tab (butonul 👁️) sau manual mai jos. Prețul și Δ zi se actualizează prin Yahoo. Filtrează pe gainers/losers/movers/early, bifează 2+ → „🤖 Compară AI" (ca la Earnings). Se salvează local în browser.
+      <strong>👁️ Watchlist.</strong> Adaugă instrumente din orice tab (butonul 👁️) sau manual. Fiecare primește un <strong>verdict 5-tier</strong> (STRONG BUY → AVOID) din MA50/200 + RSI + momentum + volum; <strong>click pe rând</strong> = detaliu cu breakdown-ul scorului, β vs SPY, niveluri. Sparkline configurabil, badge sesiune (PRE/RTH/AFT/EU), <strong>auto-scan</strong> cu countdown + toast la urcare de verdict, <strong>alerte preț</strong> (🔔) și „🧠 Compară AI". Tot local în browser.
     </div>
 
     <div class="scan-controls">
@@ -2293,7 +2293,7 @@ function wlRender(){
       ${cell(m?((m.chg>=0?'+':'')+m.chg.toFixed(2)+'%'):'', m?(m.chg>=0?'pos':'neg'):'')}
       ${cell(m?m.rsi.toFixed(0):'')}
       <td class="wl-spark">${ (m && d.closes && d.closes.length > 1) ? sparkline(d.closes.slice(-wlSparkDays)) : '<span style="color:var(--text-dim)">–</span>' }</td>
-      <td style="text-align:right" onclick="event.stopPropagation()"><button class="btn-row" title="Scoate din watchlist" onclick="wlRemove('${kq}')">✕</button></td>
+      <td style="text-align:right;white-space:nowrap" onclick="event.stopPropagation()"><button class="btn-row ${(wlAlerts[w.key]&&wlAlerts[w.key].armed)?'added':''}" title="Alertă preț" onclick="wlSetAlert('${kq}')">🔔</button> <button class="btn-row" title="Scoate din watchlist" onclick="wlRemove('${kq}')">✕</button></td>
     </tr>`;
     let detail = '';
     if(wlExpanded.has(w.key) && sc && m){
@@ -2392,7 +2392,37 @@ async function wlRefresh(force){
   wlRefreshing = false;
   wlRender();
   wlCheckVerdictChanges();   // W4: toast la îmbunătățire de verdict
+  wlCheckAlerts();           // W5: verifică pragurile de preț
   flushQuoteCache();   // PERF: scrie cache-ul o singură dată la final
+}
+// ── W5: alerte preț pe watchlist (prag cu direcție auto) ──
+let wlAlerts = (function(){ try { return JSON.parse(localStorage.getItem('salt_wl_alerts') || '{}'); } catch(e){ return {}; } })();
+function wlAlertsSave(){ try { localStorage.setItem('salt_wl_alerts', JSON.stringify(wlAlerts)); } catch(e){} }
+function wlLivePrice(key){ const d = wlData[key]; return (d && d.m) ? (d.live ? d.live.last : d.m.last) : null; }
+function wlSetAlert(key){
+  const w = watchlist.find(x => x.key === key); if(!w) return;
+  const cur = wlLivePrice(key);
+  if('Notification' in window && Notification.permission === 'default'){ try { Notification.requestPermission(); } catch(e){} }
+  const v = prompt(`Alertă preț pentru ${w.name}${cur != null ? ` (curent $${cur.toFixed(2)})` : ''}:\nPrețul țintă (gol = șterge alerta):`, cur != null ? cur.toFixed(2) : '');
+  if(v === null) return;
+  if(!v.trim()){ delete wlAlerts[key]; wlAlertsSave(); showToast('🔕 Alertă ștearsă'); wlRender(); return; }
+  const target = parseFloat(v);
+  if(isNaN(target)){ showToast('Preț invalid'); return; }
+  wlAlerts[key] = { target, dir: (cur != null && target >= cur) ? 'up' : 'down', armed: true };
+  wlAlertsSave(); showToast(`🔔 Alertă la $${target.toFixed(2)} (${wlAlerts[key].dir === 'up' ? 'la urcare' : 'la coborâre'})`); wlRender();
+}
+function wlCheckAlerts(){
+  let changed = false;
+  watchlist.forEach(w => {
+    const a = wlAlerts[w.key]; if(!a || !a.armed) return;
+    const px = wlLivePrice(w.key); if(px == null) return;
+    if((a.dir === 'up' && px >= a.target) || (a.dir === 'down' && px <= a.target)){
+      showToast(`🔔 ${w.name} a atins $${a.target.toFixed(2)} (acum $${px.toFixed(2)})`);
+      a.armed = false; changed = true;
+      if('Notification' in window && Notification.permission === 'granted'){ try { new Notification('Salt — alertă preț', { body:`${w.name}: $${px.toFixed(2)}` }); } catch(e){} }
+    }
+  });
+  if(changed){ wlAlertsSave(); wlRender(); }
 }
 // ── W4: auto-scan cu countdown + verdict toast ──
 let wlAutoOn = false, wlAutoTimer = null, wlCountTimer = null, wlNextScan = 0;
