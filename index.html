@@ -685,6 +685,25 @@ td.isin {
 .ai-fade { animation: aiFade 0.35s ease; }
 @keyframes aiFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 .ai-keyform input { background: var(--bg-soft); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 12px; }
+/* ── Entry/SL/TP pe card + position sizer (F2) ── */
+.eb-levels { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; align-items: stretch; }
+.eb-levels .lv { display: flex; flex-direction: column; align-items: center; background: var(--bg-soft); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-family: 'DM Mono', monospace; min-width: 52px; }
+.eb-levels .lv span { font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .04em; }
+.eb-levels .lv b { font-size: 12px; color: var(--text); }
+.eb-levels .lv b.pos { color: var(--green); }
+.eb-levels .lv b.neg { color: var(--accent); }
+.eb-levels .lv-sizer { background: var(--purple); border: none; border-radius: 6px; padding: 0 11px; cursor: pointer; font-size: 15px; }
+.sizer-overlay { position: fixed; inset: 0; background: #000b; z-index: 1000; display: none; align-items: center; justify-content: center; padding: 16px; }
+.sizer-overlay.show { display: flex; }
+.sizer-modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; width: 100%; max-width: 360px; font-family: 'DM Mono', monospace; box-shadow: 0 12px 40px #000a; }
+.sizer-modal h3 { font-family: 'DM Mono', monospace; font-size: 14px; margin: 0 0 4px; color: var(--accent); }
+.sizer-modal .sz-name { font-size: 12px; color: var(--text-dim); margin-bottom: 12px; }
+.sizer-modal label { display: block; font-size: 10px; color: var(--text-dim); text-transform: uppercase; margin: 8px 0 3px; }
+.sizer-modal input { width: 100%; background: var(--bg-soft); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 13px; }
+.sizer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sz-out { margin-top: 12px; padding: 10px; background: var(--bg-soft); border-radius: 8px; font-size: 12px; line-height: 1.7; }
+.sz-out b { color: var(--text); }
+.sizer-close { margin-top: 12px; width: 100%; background: var(--accent); border: none; border-radius: 8px; padding: 9px; cursor: pointer; font-weight: 600; font-family: 'DM Mono', monospace; color: #000; }
 </style>
 </head>
 <body>
@@ -1303,15 +1322,17 @@ async function fetchSeries(symbol){
   const nowSec = Date.now() / 1000;
   const sessionOpen = reg && nowSec >= reg.start && nowSec < reg.end;
   const lastIdx = q.close.length - 1;
-  const closes = [], volumes = [];
+  const closes = [], volumes = [], highs = [], lows = [];
   for(let i = 0; i < q.close.length; i++){
     if(i === lastIdx && sessionOpen) continue;   // sare bara parțială a zilei cât bursa e deschisă
     if(q.close[i] == null) continue;
     closes.push(q.close[i]);
     volumes.push(q.volume && q.volume[i] != null ? q.volume[i] : 0);
+    highs.push(q.high && q.high[i] != null ? q.high[i] : q.close[i]);   // pt ATR (Entry/SL/TP)
+    lows.push(q.low && q.low[i] != null ? q.low[i] : q.close[i]);
   }
   if(closes.length < 8) return { error: 'prea puține bare' };
-  return { closes, volumes };
+  return { closes, volumes, highs, lows };
 }
 
 // ── indicators ──
@@ -1327,7 +1348,21 @@ function rsi14(closes){
   return 100 - 100/(1+rs);
 }
 function mean(a){ return a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0; }
-function indicators(closes, volumes){
+// ATR(14) din true range; fallback la |Δclose| dacă lipsesc high/low (cache vechi)
+function atr14(closes, highs, lows){
+  const n = closes.length;
+  if(n < 2) return 0;
+  const trs = [];
+  for(let i = 1; i < n; i++){
+    const h = highs && highs[i] != null ? highs[i] : closes[i];
+    const l = lows && lows[i] != null ? lows[i] : closes[i];
+    const pc = closes[i-1];
+    trs.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
+  }
+  const k = Math.min(14, trs.length);
+  return trs.slice(-k).reduce((a, b) => a + b, 0) / k;
+}
+function indicators(closes, volumes, highs, lows){
   const n = closes.length;
   const last = closes[n-1], prev = closes[n-2];
   const chg = prev ? (last-prev)/prev*100 : 0;
@@ -1347,7 +1382,15 @@ function indicators(closes, volumes){
     const avg = mean(prior);
     if(avg > 0) volRatio = volumes[volumes.length-1] / avg;
   }
-  return { chg, rsi: rsi14(closes.slice(-30)), w7, w3, w14, w30, last, hi, lo, pos, volRatio };
+  return { chg, rsi: rsi14(closes.slice(-30)), w7, w3, w14, w30, last, hi, lo, pos, volRatio, atr: atr14(closes, highs, lows) };
+}
+// Entry/SL/TP din ATR pentru un setup LONG (Entry = ultimul close, SL = 1.5×ATR sub, TP = 1R/2R/3R)
+function calcLevels(m){
+  const entry = m.last;
+  const atr = (m.atr && m.atr > 0) ? m.atr : entry * 0.02;   // fallback 2% dacă ATR indisponibil
+  const sl = entry - 1.5 * atr;
+  const risk = entry - sl;
+  return { entry, sl, tp1: entry + risk, tp2: entry + 2 * risk, tp3: entry + 3 * risk, atr, risk };
 }
 
 // ── scoring (adapted from nasdaq calcEarlyBuyScore, price-only) ──
@@ -1425,10 +1468,10 @@ async function startEarlyScan(force){
     if(!data || !data.closes){
       const out = await fetchSeries(r.symbol);
       if(out.error){ failed.push({...item, reason:out.error, ticker:r.symbol}); return; }
-      data = { closes: out.closes, volumes: out.volumes };
+      data = { closes: out.closes, volumes: out.volumes, highs: out.highs, lows: out.lows };
       qc[item.name] = data; saveQuoteCache(qc);
     }
-    const m = indicators(data.closes, data.volumes);
+    const m = indicators(data.closes, data.volumes, data.highs, data.lows);
     const score = calcEarlyBirdScore(m);
     scored.push({ ...item, ticker:r.symbol, exch:r.exch, m, score, closes:data.closes });
   }
@@ -1521,6 +1564,8 @@ function renderEarlyBird(top, all, failed, aborted){
   }
   c.innerHTML = banner + '<div class="eb-grid">' + top.map((x,idx) => {
     const st = stageOf(x.m);
+    const L = calcLevels(x.m);
+    const fmtL = v => v >= 1000 ? v.toFixed(0) : v.toFixed(2);
     return `<div class="eb-card ${idx===0?'top-pick':''}">
       <div class="eb-stripe"></div>
       <div class="eb-body">
@@ -1542,6 +1587,14 @@ function renderEarlyBird(top, all, failed, aborted){
           <div class="eb-metric"><div class="eb-metric-lbl">3z/7z</div><div class="eb-metric-val">${x.m.w3>=0?'+':''}${x.m.w3.toFixed(1)}/${x.m.w7>=0?'+':''}${x.m.w7.toFixed(1)}</div></div>
           <div class="eb-metric"><div class="eb-metric-lbl">Volum</div><div class="eb-metric-val" style="color:${x.m.volRatio>=1.3?'var(--green)':'var(--text)'}">${(x.m.volRatio||0).toFixed(1)}×</div></div>
           <div class="eb-metric"><div class="eb-metric-lbl">Poz 52s</div><div class="eb-metric-val">${(x.m.pos*100).toFixed(0)}%</div></div>
+        </div>
+        <div class="eb-levels">
+          <div class="lv"><span>Entry</span><b>${fmtL(L.entry)}</b></div>
+          <div class="lv"><span>SL</span><b class="neg">${fmtL(L.sl)}</b></div>
+          <div class="lv"><span>TP1</span><b class="pos">${fmtL(L.tp1)}</b></div>
+          <div class="lv"><span>TP2</span><b class="pos">${fmtL(L.tp2)}</b></div>
+          <div class="lv"><span>TP3</span><b class="pos">${fmtL(L.tp3)}</b></div>
+          <button class="lv-sizer" onclick="openSizer(${L.entry.toFixed(4)},${L.sl.toFixed(4)},'${encodeURIComponent(x.name)}')" title="Position sizer (mărime poziție din % risc)">💰</button>
         </div>
         <div class="eb-links">
           <a class="eb-link" href="https://finance.yahoo.com/quote/${encodeURIComponent(x.ticker)}" target="_blank">📈 Yahoo</a>
@@ -1624,10 +1677,10 @@ async function metricsFor(item){
   if(!data || !data.closes){
     const out = await fetchSeries(ticker);
     if(out.error) return { error: out.error, ticker };
-    data = { closes: out.closes, volumes: out.volumes };
+    data = { closes: out.closes, volumes: out.volumes, highs: out.highs, lows: out.lows };
     qc[cacheKey] = data; saveQuoteCache(qc);
   }
-  return { ticker, m: indicators(data.closes, data.volumes), closes: data.closes };
+  return { ticker, m: indicators(data.closes, data.volumes, data.highs, data.lows), closes: data.closes };
 }
 // ── AI INLINE (Claude API direct din browser, cheie partajată 'anthropic_api_key' ca în suita premarket) ──
 const AIKEY = 'anthropic_api_key';
@@ -1706,6 +1759,59 @@ async function runAiInline(promptText, boxId){
 }
 // păstrat ca alias (losers + watchlist îl apelează) → acum rulează AI inline, nu mai copiază
 function copyToClaude(prompt, boxId){ runAiInline(prompt, boxId); }
+
+// ── POSITION SIZER (F2): mărime poziție din % risc cont, din Entry/SL ──
+const SIZER_KEY = 'salt_sizer';
+function sizerPrefs(){ try { return JSON.parse(localStorage.getItem(SIZER_KEY) || '{}'); } catch(e){ return {}; } }
+function ensureSizer(){
+  if(document.getElementById('sizerOverlay')) return;
+  const ov = document.createElement('div');
+  ov.className = 'sizer-overlay'; ov.id = 'sizerOverlay';
+  ov.innerHTML = `<div class="sizer-modal" id="sizerModal">
+    <h3>💰 Position Sizer</h3>
+    <div class="sz-name" id="szName"></div>
+    <div class="sizer-grid">
+      <div><label>Capital cont</label><input id="szCapital" type="number" min="0" oninput="calcSizer()"></div>
+      <div><label>Risc %</label><input id="szRisk" type="number" min="0" step="0.1" oninput="calcSizer()"></div>
+      <div><label>Entry</label><input id="szEntry" type="number" step="0.01" oninput="calcSizer()"></div>
+      <div><label>Stop loss</label><input id="szSl" type="number" step="0.01" oninput="calcSizer()"></div>
+    </div>
+    <div class="sz-out" id="szOut"></div>
+    <button class="sizer-close" onclick="closeSizer()">Închide</button>
+  </div>`;
+  // click pe fundal (în afara modalului) închide
+  ov.addEventListener('click', e => { if(e.target === ov) closeSizer(); });
+  document.body.appendChild(ov);
+}
+function openSizer(entry, sl, encName){
+  ensureSizer();
+  const p = sizerPrefs();
+  document.getElementById('szName').textContent = encName ? decodeURIComponent(encName) : '';
+  document.getElementById('szEntry').value = (+entry).toFixed(2);
+  document.getElementById('szSl').value = (+sl).toFixed(2);
+  document.getElementById('szCapital').value = p.capital != null ? p.capital : 1000;
+  document.getElementById('szRisk').value = p.risk != null ? p.risk : 1;
+  calcSizer();
+  document.getElementById('sizerOverlay').classList.add('show');
+}
+function closeSizer(){ const o = document.getElementById('sizerOverlay'); if(o) o.classList.remove('show'); }
+function calcSizer(){
+  const cap = parseFloat(document.getElementById('szCapital').value) || 0;
+  const risk = parseFloat(document.getElementById('szRisk').value) || 0;
+  const entry = parseFloat(document.getElementById('szEntry').value) || 0;
+  const sl = parseFloat(document.getElementById('szSl').value) || 0;
+  try { localStorage.setItem(SIZER_KEY, JSON.stringify({ capital: cap, risk })); } catch(e){}
+  const perShare = entry - sl;
+  const out = document.getElementById('szOut');
+  if(perShare <= 0){ out.innerHTML = `<div style="color:var(--accent)">Stop loss-ul trebuie să fie sub Entry.</div>`; return; }
+  const riskAmt = cap * risk / 100;
+  const shares = Math.floor(riskAmt / perShare);
+  const posVal = shares * entry;
+  out.innerHTML = `<div>Risc/acțiune: <b>${perShare.toFixed(2)}</b></div>`
+    + `<div>Sumă riscată: <b>${riskAmt.toFixed(2)}</b></div>`
+    + `<div>Acțiuni: <b style="color:var(--green)">${shares}</b></div>`
+    + `<div>Valoare poziție: <b>${posVal.toFixed(2)}</b>${cap > 0 ? ` · <b>${(posVal/cap*100).toFixed(0)}%</b> din cont` : ''}</div>`;
+}
 function metricLine(x){
   return `${x.name} (${x.ticker}, ${x.jurisdiction}): zi ${x.m.chg>=0?'+':''}${x.m.chg.toFixed(1)}%, 7z ${x.m.w7>=0?'+':''}${x.m.w7.toFixed(1)}%, 3z ${x.m.w3>=0?'+':''}${x.m.w3.toFixed(1)}%, RSI ${x.m.rsi.toFixed(0)}, vol ${(x.m.volRatio||0).toFixed(1)}×, poziție 52s ${(x.m.pos*100).toFixed(0)}%`;
 }
